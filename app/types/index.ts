@@ -253,3 +253,9 @@ export interface GemstoneSlot {
   type: string // gemstone type id
   rarity: string // gemstone rarity id (empty if no gem placed)
 }
+
+// Item abilities
+export interface ItemAbility {
+  name: string
+  description: string // Can contain newlines and formatting codes
+}

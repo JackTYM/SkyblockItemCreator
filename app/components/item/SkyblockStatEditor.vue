@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, type GemstoneSlot } from '~/types'
+import { SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, MINECRAFT_COLORS, MINECRAFT_COLOR_NAMES, SKYBLOCK_SYMBOLS, type GemstoneSlot, type ItemAbility } from '~/types'
 
 interface Props {
   modelValue: Record<string, number>
   gemstoneSlots?: GemstoneSlot[]
+  abilities?: ItemAbility[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   gemstoneSlots: () => [],
+  abilities: () => [],
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, number>]
   'update:gemstoneSlots': [value: GemstoneSlot[]]
+  'update:abilities': [value: ItemAbility[]]
 }>()
 
 // Local gemstone slots state
@@ -20,6 +23,13 @@ const localGemstones = ref<GemstoneSlot[]>([...props.gemstoneSlots])
 
 watch(() => props.gemstoneSlots, (newVal) => {
   localGemstones.value = [...newVal]
+}, { deep: true })
+
+// Local abilities state
+const localAbilities = ref<ItemAbility[]>([...props.abilities])
+
+watch(() => props.abilities, (newVal) => {
+  localAbilities.value = [...newVal]
 }, { deep: true })
 
 // Define stat categories with their stat keys
@@ -99,7 +109,7 @@ const statCategories = {
 }
 
 const categoryKeys = Object.keys(statCategories) as Array<keyof typeof statCategories>
-const activeTab = ref<'stats' | 'gemstones'>('stats')
+const activeTab = ref<'stats' | 'gemstones' | 'abilities'>('stats')
 const activeStatCategory = ref<keyof typeof statCategories>('combat')
 
 function updateStat(stat: string, value: string) {
@@ -155,6 +165,62 @@ function getGemstoneType(id: string) {
 function getGemstoneRarity(id: string) {
   return GEMSTONE_RARITIES.find(r => r.id === id)
 }
+
+// Ability functions
+const abilityTextareaRefs = ref<(HTMLTextAreaElement | null)[]>([])
+const showSymbolPicker = ref(false)
+const activeAbilityIndex = ref<number | null>(null)
+
+function addAbility() {
+  localAbilities.value.push({ name: 'Ability Name', description: 'Ability description' })
+  emit('update:abilities', [...localAbilities.value])
+}
+
+function removeAbility(index: number) {
+  localAbilities.value.splice(index, 1)
+  emit('update:abilities', [...localAbilities.value])
+}
+
+function updateAbilityName(index: number, name: string) {
+  localAbilities.value[index].name = name
+  emit('update:abilities', [...localAbilities.value])
+}
+
+function updateAbilityDescription(index: number, description: string) {
+  localAbilities.value[index].description = description
+  emit('update:abilities', [...localAbilities.value])
+}
+
+function insertIntoAbility(index: number, text: string) {
+  const textarea = abilityTextareaRefs.value[index]
+  if (!textarea) return
+
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const current = localAbilities.value[index].description
+  const before = current.slice(0, start)
+  const after = current.slice(end)
+
+  localAbilities.value[index].description = before + text + after
+  emit('update:abilities', [...localAbilities.value])
+
+  nextTick(() => {
+    textarea.setSelectionRange(start + text.length, start + text.length)
+    textarea.focus()
+  })
+}
+
+function openSymbolPicker(index: number) {
+  activeAbilityIndex.value = index
+  showSymbolPicker.value = true
+}
+
+function handleSymbolSelect(symbol: string) {
+  if (activeAbilityIndex.value !== null) {
+    insertIntoAbility(activeAbilityIndex.value, symbol)
+  }
+  showSymbolPicker.value = false
+}
 </script>
 
 <template>
@@ -174,6 +240,13 @@ function getGemstoneRarity(id: string) {
         @click="activeTab = 'gemstones'"
       >
         Gemstone Slots
+      </button>
+      <button
+        class="px-3 py-1.5 text-xs rounded transition-colors"
+        :class="activeTab === 'abilities' ? 'bg-[#3d7a37] text-white' : 'bg-[#2d2d2d] text-[#888] hover:bg-[#353535]'"
+        @click="activeTab = 'abilities'"
+      >
+        Abilities
       </button>
     </div>
 
@@ -235,7 +308,7 @@ function getGemstoneRarity(id: string) {
     </template>
 
     <!-- Gemstones Tab -->
-    <template v-else>
+    <template v-else-if="activeTab === 'gemstones'">
       <div class="p-3 bg-[#1a1a1a] border border-[#333] rounded space-y-3">
         <p class="text-xs text-[#AA00AA] flex items-center gap-2">
           <span class="text-lg">✧</span>
@@ -327,6 +400,138 @@ function getGemstoneRarity(id: string) {
             </template>
           </span>
         </div>
+      </div>
+    </template>
+
+    <!-- Abilities Tab -->
+    <template v-else>
+      <div class="p-3 bg-[#1a1a1a] border border-[#333] rounded space-y-3">
+        <p class="text-xs text-[#FFAA00] flex items-center gap-2">
+          <span class="text-lg">๑</span>
+          <span>Item Abilities</span>
+        </p>
+
+        <p class="text-[10px] text-[#666]">
+          Add abilities to your item. Use formatting codes in descriptions (e.g. §c for red).
+        </p>
+
+        <!-- Abilities list -->
+        <div class="space-y-3">
+          <div
+            v-for="(ability, index) in localAbilities"
+            :key="index"
+            class="p-3 bg-black/30 rounded space-y-2"
+          >
+            <div class="flex items-center gap-2">
+              <!-- Ability name -->
+              <input
+                :value="ability.name"
+                type="text"
+                class="mc-input text-xs py-1 flex-1"
+                placeholder="Ability Name"
+                @input="updateAbilityName(index, ($event.target as HTMLInputElement).value)"
+              >
+
+              <!-- Remove button -->
+              <button
+                class="w-6 h-6 flex items-center justify-center text-[#FF5555] hover:text-[#FF7777] bg-[#2d2d2d] rounded"
+                @click="removeAbility(index)"
+              >
+                ✕
+              </button>
+            </div>
+
+            <!-- Formatting toolbar -->
+            <div class="flex flex-wrap gap-1 p-2 bg-[#2d2d2d] rounded-t border-b border-[#1a1a1a]">
+              <button
+                v-for="code in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']"
+                :key="code"
+                class="w-5 h-5 text-[10px] font-minecraft hover:scale-110 transition-transform"
+                :style="{ color: MINECRAFT_COLORS[code] }"
+                :title="`${MINECRAFT_COLOR_NAMES[code]} (§${code})`"
+                @click="insertIntoAbility(index, `§${code}`)"
+              >
+                §
+              </button>
+              <div class="w-px h-5 bg-[#555555] mx-1" />
+              <button
+                class="px-2 h-5 text-[10px] font-minecraft font-bold bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+                title="Bold"
+                @click="insertIntoAbility(index, '§l')"
+              >
+                B
+              </button>
+              <button
+                class="px-2 h-5 text-[10px] font-minecraft italic bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+                title="Italic"
+                @click="insertIntoAbility(index, '§o')"
+              >
+                I
+              </button>
+              <button
+                class="px-2 h-5 text-[10px] font-minecraft bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+                title="Reset"
+                @click="insertIntoAbility(index, '§r')"
+              >
+                R
+              </button>
+              <div class="w-px h-5 bg-[#555555] mx-1" />
+              <button
+                class="px-2 h-5 text-[10px] font-minecraft bg-[#3d3d3d] hover:bg-[#4d4d4d] text-[#FF5555]"
+                title="Insert Symbol"
+                @click="openSymbolPicker(index)"
+              >
+                ❤
+              </button>
+            </div>
+
+            <!-- Ability description -->
+            <textarea
+              :ref="el => abilityTextareaRefs[index] = el as HTMLTextAreaElement"
+              :value="ability.description"
+              class="mc-input text-xs py-1 w-full min-h-[60px] resize-y rounded-t-none"
+              placeholder="Ability description (use §c for colors)"
+              @input="updateAbilityDescription(index, ($event.target as HTMLTextAreaElement).value)"
+            />
+          </div>
+        </div>
+
+        <!-- Symbol Picker Modal -->
+        <Teleport to="body">
+          <div
+            v-if="showSymbolPicker"
+            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            @click.self="showSymbolPicker = false"
+          >
+            <div class="bg-[#1a1a1a] border-2 border-[#444] rounded-lg p-4 max-w-md">
+              <h3 class="text-sm text-[#FFAA00] mb-3">Select Symbol</h3>
+              <div class="grid grid-cols-10 gap-1">
+                <button
+                  v-for="symbol in SKYBLOCK_SYMBOLS"
+                  :key="symbol"
+                  class="w-8 h-8 flex items-center justify-center text-lg hover:bg-[#333] rounded transition-colors"
+                  @click="handleSymbolSelect(symbol)"
+                >
+                  {{ symbol }}
+                </button>
+              </div>
+              <button
+                class="mt-3 w-full py-2 text-xs text-[#888] hover:text-white bg-[#2d2d2d] hover:bg-[#353535] rounded"
+                @click="showSymbolPicker = false"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Teleport>
+
+        <!-- Add ability button -->
+        <button
+          class="w-full py-2 text-xs text-[#55FF55] hover:text-[#77FF77] bg-[#2d2d2d] hover:bg-[#353535] rounded transition-colors"
+          @click="addAbility"
+        >
+          + Add Ability
+        </button>
       </div>
     </template>
 

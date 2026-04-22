@@ -65,7 +65,7 @@ function getDisplayText(segment: { text: string; obfuscated: boolean }, index: n
 </script>
 
 <template>
-  <span class="mc-font whitespace-pre-wrap">
+  <span class="mc-font whitespace-pre">
     <span
       v-for="(segment, index) in segments"
       :key="index"

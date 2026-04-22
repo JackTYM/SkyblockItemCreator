@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RARITIES, SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, type GemstoneSlot } from '~/types'
+import { RARITIES, SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, type GemstoneSlot, type ItemAbility } from '~/types'
 import MinecraftText from './MinecraftText.vue'
 import type { Rarity } from '~/types'
 
@@ -10,6 +10,7 @@ interface Props {
   lore: string[]
   stats: Record<string, number>
   gemstoneSlots?: GemstoneSlot[]
+  abilities?: ItemAbility[]
   texture?: string
   isSkyblock: boolean
 }
@@ -130,7 +131,7 @@ defineExpose({
         </div>
 
         <!-- Tooltip content -->
-        <div ref="tooltipRef" class="mc-tooltip p-3 min-w-[250px] max-w-[350px]">
+        <div ref="tooltipRef" class="mc-tooltip p-3 min-w-[250px]">
           <!-- Item name in tooltip -->
           <MinecraftText
             :text="formattedName"
@@ -171,6 +172,24 @@ defineExpose({
                 :text="line"
                 class="text-xs block"
               />
+              <div class="h-2" />
+            </template>
+
+            <!-- Abilities -->
+            <template v-if="isSkyblock && abilities && abilities.length > 0">
+              <template v-for="(ability, aIndex) in abilities" :key="'ability-' + aIndex">
+                <MinecraftText
+                  :text="`§6Item Ability: ${ability.name}`"
+                  class="text-xs block"
+                />
+                <MinecraftText
+                  v-for="(line, lIndex) in ability.description.split('\n')"
+                  :key="'ability-' + aIndex + '-line-' + lIndex"
+                  :text="line.startsWith('§') ? line : `§7${line}`"
+                  class="text-xs block"
+                />
+                <div class="h-2" />
+              </template>
             </template>
 
             <!-- Rarity line -->

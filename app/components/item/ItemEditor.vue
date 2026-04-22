@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TextureItem, GemstoneSlot } from '~/types'
+import type { TextureItem, GemstoneSlot, ItemAbility } from '~/types'
 import RaritySelector from './RaritySelector.vue'
 import SkyblockStatEditor from './SkyblockStatEditor.vue'
 import MarkdownToolbar from './MarkdownToolbar.vue'
@@ -28,6 +28,7 @@ const selectedRarity = ref('legendary')
 const rawLore = ref('A powerful weapon\nforged in the depths')
 const stats = ref<Record<string, number>>({})
 const gemstoneSlots = ref<GemstoneSlot[]>([])
+const abilities = ref<ItemAbility[]>([])
 const selectedTexture = ref<string>('')
 
 // UI state
@@ -120,6 +121,7 @@ async function handleCopyJson() {
     rarity: selectedRarity.value,
     lore: loreLines.value,
     stats: stats.value,
+    abilities: abilities.value,
     texture: selectedTexture.value,
   }
   const success = await copyToClipboard(JSON.stringify(item, null, 2))
@@ -135,6 +137,7 @@ async function handleGiveCommand() {
     rarity: selectedRarity.value,
     lore: loreLines.value,
     stats: stats.value,
+    abilities: abilities.value,
     texture: selectedTexture.value,
   }
   const command = generateGiveCommand(item)
@@ -151,6 +154,7 @@ async function handleShare() {
     rarity: selectedRarity.value,
     lore: loreLines.value,
     stats: stats.value,
+    abilities: abilities.value,
     texture: selectedTexture.value,
   }
   const data = encodeURIComponent(JSON.stringify(item))
@@ -234,7 +238,7 @@ async function handleShare() {
 
           <!-- Stats Editor -->
           <div class="border-t border-[#373737] pt-4">
-            <SkyblockStatEditor v-model="stats" v-model:gemstone-slots="gemstoneSlots" />
+            <SkyblockStatEditor v-model="stats" v-model:gemstone-slots="gemstoneSlots" v-model:abilities="abilities" />
           </div>
         </template>
 
@@ -344,6 +348,7 @@ async function handleShare() {
           :lore="loreLines"
           :stats="stats"
           :gemstone-slots="gemstoneSlots"
+          :abilities="abilities"
           :texture="selectedTexture"
           :is-skyblock="isSkyblock"
         />
