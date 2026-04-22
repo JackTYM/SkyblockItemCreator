@@ -14,13 +14,20 @@ const features = [
     link: '/recipe',
     color: '#55FF55',
   },
-]
-
-const highlights = [
-  { icon: '✎', text: 'Markdown & § code editors' },
-  { icon: '❤', text: 'All Skyblock stat symbols' },
-  { icon: '🎨', text: 'Multiple texture sources' },
-  { icon: '📥', text: 'Export as PNG, JSON, /give' },
+  {
+    icon: '👑',
+    title: 'Mayor Creator',
+    description: 'Design custom mayors with perks and tooltips',
+    link: '/mayor',
+    color: '#FFAA00',
+  },
+  {
+    icon: '🏆',
+    title: 'Milestone Creator',
+    description: 'Create milestone reward menus with progress tracking',
+    link: '/milestone',
+    color: '#55FFFF',
+  },
 ]
 </script>
 
@@ -48,7 +55,7 @@ const highlights = [
     </div>
 
     <!-- Feature cards -->
-    <div class="grid md:grid-cols-2 gap-6 w-full max-w-2xl mb-12">
+    <div class="grid md:grid-cols-2 gap-6 w-full max-w-3xl mb-12">
       <NuxtLink
         v-for="feature in features"
         :key="feature.title"
@@ -83,36 +90,5 @@ const highlights = [
       </NuxtLink>
     </div>
 
-    <!-- Highlights -->
-    <div class="bg-[#1a1a1a] border border-[#2d2d2d] rounded-xl p-5 max-w-lg w-full">
-      <h3 class="text-sm text-[#888888] mb-4 text-center font-medium">
-        Features
-      </h3>
-      <div class="grid grid-cols-2 gap-3">
-        <div
-          v-for="highlight in highlights"
-          :key="highlight.text"
-          class="flex items-center gap-2"
-        >
-          <span class="text-lg">{{ highlight.icon }}</span>
-          <span class="text-xs text-[#aaaaaa]">{{ highlight.text }}</span>
-        </div>
       </div>
-    </div>
-
-    <!-- Rarity showcase -->
-    <div class="mt-12 text-center">
-      <p class="text-xs text-[#555555] mb-3">All Rarity Tiers</p>
-      <div class="flex flex-wrap justify-center gap-2">
-        <span class="text-xs text-rarity-common px-3 py-1.5 bg-white/5 rounded-lg">COMMON</span>
-        <span class="text-xs text-rarity-uncommon px-3 py-1.5 bg-green-500/10 rounded-lg">UNCOMMON</span>
-        <span class="text-xs text-rarity-rare px-3 py-1.5 bg-blue-500/10 rounded-lg">RARE</span>
-        <span class="text-xs text-rarity-epic px-3 py-1.5 bg-purple-500/10 rounded-lg">EPIC</span>
-        <span class="text-xs text-rarity-legendary px-3 py-1.5 bg-amber-500/10 rounded-lg">LEGENDARY</span>
-        <span class="text-xs text-rarity-mythic px-3 py-1.5 bg-pink-500/10 rounded-lg">MYTHIC</span>
-        <span class="text-xs text-rarity-divine px-3 py-1.5 bg-cyan-400/10 rounded-lg">DIVINE</span>
-        <span class="text-xs text-rarity-special px-3 py-1.5 bg-red-500/10 rounded-lg">SPECIAL</span>
-      </div>
-    </div>
-  </div>
 </template>
