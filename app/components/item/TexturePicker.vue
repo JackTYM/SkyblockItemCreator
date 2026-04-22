@@ -99,11 +99,15 @@ async function searchTexture() {
   const value = textureValue.value.trim()
 
   // Build the mc-heads URL - works with both texture hashes and base64 values
-  const url = `https://mc-heads.net/head/${value}/64`
-  const isValid = await validateImageUrl(url)
+  // Route through images.weserv.nl proxy to enable PNG export (mc-heads.net lacks CORS for texture hashes)
+  const directUrl = `https://mc-heads.net/head/${value}/64`
+  const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(directUrl)}`
+
+  // Validate using direct URL first (faster), then use proxied URL for storage
+  const isValid = await validateImageUrl(directUrl)
 
   if (isValid) {
-    texturePreview.value = url
+    texturePreview.value = proxiedUrl
     urlError.value = ''
   } else {
     texturePreview.value = ''
