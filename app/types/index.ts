@@ -131,7 +131,7 @@ export const SKYBLOCK_STATS: SkyblockStat[] = [
   // Fishing Stats
   { symbol: '☂', name: 'Fishing Speed', stat: 'fishing_speed', color: '#55FFFF' },
   { symbol: 'α', name: 'Sea Creature Chance', stat: 'sea_creature_chance', color: '#00CED1' },
-  { symbol: '⚓', name: 'Double Hook', stat: 'double_hook', color: '#55FFFF' },
+  { symbol: '⚓', name: 'Double Hook', stat: 'double_hook', color: '#0000AA' },
   { symbol: '✧', name: 'Trophy Fish Chance', stat: 'trophy_fish_chance', color: '#FFAA00' },
 
   // Wisdom Stats - Aqua

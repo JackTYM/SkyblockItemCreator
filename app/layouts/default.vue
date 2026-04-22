@@ -5,6 +5,8 @@ const navItems = [
   { path: '/', label: 'Home', icon: '⌂' },
   { path: '/item', label: 'Item Creator', icon: '⚔' },
   { path: '/recipe', label: 'Recipe Designer', icon: '⚒' },
+  { path: '/mayor', label: 'Mayor Creator', icon: '👑' },
+  { path: '/milestone', label: 'Milestone Creator', icon: '🏆' },
 ]
 </script>
 

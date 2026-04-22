@@ -93,6 +93,7 @@ const itemTypes = [
   { value: 'pet item', label: 'Pet Item' },
   { value: 'pickaxe', label: 'Pickaxe' },
   { value: 'reforge stone', label: 'Reforge Stone' },
+  { value: 'rod part', label: 'Rod Part' },
   { value: 'shovel', label: 'Shovel' },
   { value: 'sword', label: 'Sword' },
   { value: 'wand', label: 'Wand' },
