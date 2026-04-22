@@ -36,6 +36,22 @@ function clearResult() {
   })
 }
 
+function toggleSlotGlint(row: number, col: number) {
+  const newGrid = props.modelValue.grid.map((r, ri) =>
+    r.map((c, ci) =>
+      ri === row && ci === col ? { ...c, glint: !c.glint } : c
+    )
+  )
+  emit('update:modelValue', { ...props.modelValue, grid: newGrid })
+}
+
+function toggleResultGlint() {
+  emit('update:modelValue', {
+    ...props.modelValue,
+    result: { ...props.modelValue.result, glint: !props.modelValue.result.glint },
+  })
+}
+
 function clearAll() {
   const emptyGrid = Array(3).fill(null).map(() =>
     Array(3).fill(null).map(() => ({ texture: null, name: null, count: 1 }))
@@ -66,6 +82,7 @@ function clearAll() {
               size="lg"
               @click="emit('slotClick', rowIndex, colIndex)"
               @clear="clearSlot(rowIndex, colIndex)"
+              @toggle-glint="toggleSlotGlint(rowIndex, colIndex)"
             />
           </template>
         </div>
@@ -83,6 +100,7 @@ function clearAll() {
             size="lg"
             @click="emit('resultClick')"
             @clear="clearResult"
+            @toggle-glint="toggleResultGlint"
           />
         </div>
       </div>

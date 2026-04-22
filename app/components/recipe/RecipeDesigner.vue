@@ -59,7 +59,9 @@ const { exportAsPng, exportRecipeAsJson, copyToClipboard } = useExport()
 
 async function handleExportPng() {
   if (gridRef.value?.menuRef) {
-    await exportAsPng(gridRef.value.menuRef, `skyblock-recipe-${Date.now()}`)
+    // Use light grey background for Skyblock menu, transparent for vanilla
+    const bgColor = recipeType.value === 'skyblock' ? '#c6c6c6' : '#c6c6c6'
+    await exportAsPng(gridRef.value.menuRef, `${recipeType.value}-recipe-${Date.now()}`, bgColor)
   }
 }
 

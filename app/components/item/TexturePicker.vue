@@ -33,21 +33,38 @@ const pendingItem = ref<TextureItem | null>(null)
 function getProxiedUrl(url: string): string {
   try {
     const parsed = new URL(url)
-    // Don't proxy same-origin URLs or already-proxied URLs
-    if (parsed.origin === window.location.origin || parsed.hostname === 'images.weserv.nl') {
+    // Don't proxy same-origin URLs
+    if (parsed.origin === window.location.origin) {
       return url
     }
-    // Proxy all external URLs
-    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`
+    // If already proxied, return as-is
+    if (parsed.hostname === 'images.weserv.nl') {
+      return url
+    }
+    // Proxy all external URLs with unique cache buster
+    // &n=-1 disables weserv caching, timestamp in URL busts browser cache
+    const timestamp = Date.now()
+    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&n=-1&cb=${timestamp}`
   } catch {
     return url
   }
 }
 
-// Initialize items when modal is shown
+// Initialize items when modal is shown, reset state when closed
 watch(() => props.show, (isShown) => {
   if (isShown && items.value.length === 0) {
     initItems()
+  }
+  if (!isShown) {
+    // Reset all input state when modal closes
+    customUrl.value = ''
+    headUsername.value = ''
+    headPreview.value = ''
+    textureValue.value = ''
+    texturePreview.value = ''
+    urlError.value = ''
+    pendingItem.value = null
+    itemCount.value = 1
   }
 }, { immediate: true })
 
@@ -354,6 +371,7 @@ const tabs = [
                 >
                   <div class="mc-slot w-16 h-16 flex items-center justify-center">
                     <img
+                      :key="headPreview"
                       :src="headPreview"
                       :alt="headUsername"
                       class="w-12 h-12 object-contain"
@@ -378,6 +396,7 @@ const tabs = [
                 >
                   <div class="mc-slot w-16 h-16 flex items-center justify-center">
                     <img
+                      :key="texturePreview"
                       :src="texturePreview"
                       alt="Custom Head"
                       class="w-12 h-12 object-contain"
@@ -454,6 +473,7 @@ const tabs = [
               <div class="flex items-center justify-center gap-4 mb-4">
                 <div class="mc-slot w-16 h-16 flex items-center justify-center">
                   <img
+                    :key="pendingItem.texture"
                     :src="pendingItem.texture"
                     :alt="pendingItem.name"
                     class="w-12 h-12 object-contain pixelated"

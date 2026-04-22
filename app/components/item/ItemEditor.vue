@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { TextureItem, GemstoneSlot, ItemAbility } from '~/types'
+import { RARITIES, MINECRAFT_COLORS } from '~/types'
 import RaritySelector from './RaritySelector.vue'
 import SkyblockStatEditor from './SkyblockStatEditor.vue'
-import MarkdownToolbar from './MarkdownToolbar.vue'
 import SymbolPicker from './SymbolPicker.vue'
 import TexturePicker from './TexturePicker.vue'
 import ItemPreview from './ItemPreview.vue'
@@ -12,99 +12,256 @@ interface Props {
   isSkyblock: boolean
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
-const { markdownToMinecraft } = useMinecraftFormat()
 const { exportAsPng, copyToClipboard, generateGiveCommand } = useExport()
 
 // Preview ref for export
 const itemPreviewRef = ref<InstanceType<typeof ItemPreview>>()
 
 // Editor state
-const editorMode = ref<'markdown' | 'minecraft'>('markdown')
 const itemName = ref('Custom Item')
 const itemType = ref('sword')
+const customItemType = ref('')
 const selectedRarity = ref('legendary')
+const customRarityName = ref('')
+const customRarityColor = ref('#FF5555')
+const nameColor = ref('f') // Default white for vanilla items
 const rawLore = ref('A powerful weapon\nforged in the depths')
 const stats = ref<Record<string, number>>({})
 const gemstoneSlots = ref<GemstoneSlot[]>([])
 const abilities = ref<ItemAbility[]>([])
 const selectedTexture = ref<string>('')
+const textureSource = ref<'vanilla' | 'heads' | 'custom'>('vanilla')
+const isDungeonized = ref(false)
+const enchantGlint = ref(false)
+
+
+// Computed actual item type (handles custom)
+const actualItemType = computed(() => {
+  return itemType.value === 'custom' ? customItemType.value : itemType.value
+})
 
 // UI state
 const showSymbolPicker = ref(false)
 const showTexturePicker = ref(false)
 const textareaRef = ref<HTMLTextAreaElement>()
+const nameInputRef = ref<HTMLInputElement>()
 
 // Item types for dropdown
 const itemTypes = [
-  { value: 'sword', label: 'Sword' },
-  { value: 'bow', label: 'Bow' },
-  { value: 'helmet', label: 'Helmet' },
-  { value: 'chestplate', label: 'Chestplate' },
-  { value: 'leggings', label: 'Leggings' },
-  { value: 'boots', label: 'Boots' },
-  { value: 'pickaxe', label: 'Pickaxe' },
-  { value: 'axe', label: 'Axe' },
-  { value: 'shovel', label: 'Shovel' },
-  { value: 'hoe', label: 'Hoe' },
-  { value: 'fishing rod', label: 'Fishing Rod' },
   { value: 'accessory', label: 'Accessory' },
+  { value: 'axe', label: 'Axe' },
+  { value: 'belt', label: 'Belt' },
+  { value: 'boots', label: 'Boots' },
+  { value: 'bow', label: 'Bow' },
+  { value: 'bracelet', label: 'Bracelet' },
+  { value: 'chestplate', label: 'Chestplate' },
+  { value: 'cloak', label: 'Cloak' },
+  { value: 'consumable', label: 'Consumable' },
+  { value: 'cosmetic', label: 'Cosmetic' },
+  { value: 'deployable', label: 'Deployable' },
+  { value: 'drill', label: 'Drill' },
+  { value: 'drill part', label: 'Drill Part' },
+  { value: 'dungeon item', label: 'Dungeon Item' },
+  { value: 'fishing rod', label: 'Fishing Rod' },
+  { value: 'gloves', label: 'Gloves' },
+  { value: 'helmet', label: 'Helmet' },
+  { value: 'hoe', label: 'Hoe' },
+  { value: 'leggings', label: 'Leggings' },
+  { value: 'necklace', label: 'Necklace' },
   { value: 'pet item', label: 'Pet Item' },
+  { value: 'pickaxe', label: 'Pickaxe' },
+  { value: 'reforge stone', label: 'Reforge Stone' },
+  { value: 'shovel', label: 'Shovel' },
+  { value: 'sword', label: 'Sword' },
+  { value: 'wand', label: 'Wand' },
   { value: '', label: 'None' },
+  { value: 'custom', label: 'Custom...' },
 ]
+
+// Find closest Minecraft color code for a hex color
+function findClosestColorCode(hexColor: string): string {
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+
+  let closestCode = 'c'
+  let closestDistance = Infinity
+
+  for (const [code, mcHex] of Object.entries(MINECRAFT_COLORS)) {
+    const mcR = parseInt(mcHex.substring(1, 3), 16)
+    const mcG = parseInt(mcHex.substring(3, 5), 16)
+    const mcB = parseInt(mcHex.substring(5, 7), 16)
+
+    const distance = Math.sqrt(
+      Math.pow(r - mcR, 2) + Math.pow(g - mcG, 2) + Math.pow(b - mcB, 2)
+    )
+
+    if (distance < closestDistance) {
+      closestDistance = distance
+      closestCode = code
+    }
+  }
+
+  return closestCode
+}
 
 // Computed lore lines
 const loreLines = computed(() => {
-  const lines = rawLore.value.split('\n')
+  return rawLore.value.split('\n')
+})
 
-  if (editorMode.value === 'markdown') {
-    return lines.map(line => markdownToMinecraft(line))
+// Find all active formatting codes before a position in the text
+// Returns §r + previous formatting to properly reset and restore
+function getActiveFormatting(text: string): string {
+  // Find all § codes in the text
+  const matches = text.match(/§[0-9a-fklmnor]/gi) || []
+
+  // If no formatting codes exist, just reset to clear the applied format
+  if (matches.length === 0) {
+    return '§r'
   }
 
-  return lines
-})
+  let lastColor: string | null = null
+  let isBold = false
+  let isItalic = false
+  let isUnderline = false
+  let isStrikethrough = false
+  let isObfuscated = false
+
+  for (const code of matches) {
+    const char = code[1].toLowerCase()
+    // Color codes (0-9, a-f) replace the current color
+    if (/[0-9a-f]/.test(char)) {
+      lastColor = `§${char}`
+      // In Minecraft, color codes reset formatting
+      isBold = false
+      isItalic = false
+      isUnderline = false
+      isStrikethrough = false
+      isObfuscated = false
+    }
+    // Format codes
+    if (char === 'l') isBold = true
+    if (char === 'o') isItalic = true
+    if (char === 'n') isUnderline = true
+    if (char === 'm') isStrikethrough = true
+    if (char === 'k') isObfuscated = true
+    // Reset clears everything
+    if (char === 'r') {
+      lastColor = null
+      isBold = false
+      isItalic = false
+      isUnderline = false
+      isStrikethrough = false
+      isObfuscated = false
+    }
+  }
+
+  // Build the restore string: §r first to reset, then color, then formatting
+  let restore = '§r'
+  if (lastColor) restore += lastColor
+  if (isBold) restore += '§l'
+  if (isItalic) restore += '§o'
+  if (isUnderline) restore += '§n'
+  if (isStrikethrough) restore += '§m'
+  if (isObfuscated) restore += '§k'
+
+  return restore
+}
+
+// Insert text at cursor while preserving undo history
+function insertTextPreservingUndo(textarea: HTMLTextAreaElement, newText: string) {
+  textarea.focus()
+  // Use execCommand to preserve undo stack (still works in most browsers for textareas)
+  if (!document.execCommand('insertText', false, newText)) {
+    // Fallback: use setRangeText which also preserves undo in modern browsers
+    const start = textarea.selectionStart
+    textarea.setRangeText(newText, start, textarea.selectionEnd, 'end')
+    // Manually trigger input event for Vue reactivity
+    textarea.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+}
 
 // Handle toolbar actions
 function handleInsert(text: string) {
   if (!textareaRef.value) return
 
-  const start = textareaRef.value.selectionStart
-  const end = textareaRef.value.selectionEnd
+  const textarea = textareaRef.value
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
   const before = rawLore.value.slice(0, start)
-  const after = rawLore.value.slice(end)
-
-  rawLore.value = before + text + after
-
-  nextTick(() => {
-    textareaRef.value?.setSelectionRange(start + text.length, start + text.length)
-    textareaRef.value?.focus()
-  })
-}
-
-function handleWrap(prefix: string, suffix: string) {
-  if (!textareaRef.value) return
-
-  const start = textareaRef.value.selectionStart
-  const end = textareaRef.value.selectionEnd
   const selected = rawLore.value.slice(start, end)
-  const before = rawLore.value.slice(0, start)
-  const after = rawLore.value.slice(end)
 
-  rawLore.value = before + prefix + selected + suffix + after
+  // Check if this is a color code (§0-§f) or format code (§l, §o, §n, §m, §k)
+  const isColorCode = /^§[0-9a-f]$/i.test(text)
+  const isFormatCode = /^§[lonmk]$/i.test(text)
 
-  nextTick(() => {
-    textareaRef.value?.setSelectionRange(start + prefix.length, end + prefix.length)
-    textareaRef.value?.focus()
-  })
+  if ((isColorCode || isFormatCode) && selected.length > 0) {
+    // Find what formatting was active before the selection
+    const previousFormatting = getActiveFormatting(before)
+
+    // Build the replacement: code + selected text + restore formatting
+    const replacement = text + selected + previousFormatting
+
+    // Insert using undo-preserving method
+    insertTextPreservingUndo(textarea, replacement)
+
+    nextTick(() => {
+      // Keep the text selected (after the inserted code)
+      textarea.setSelectionRange(start + text.length, start + text.length + selected.length)
+    })
+  } else {
+    // Just insert the code at cursor position
+    insertTextPreservingUndo(textarea, text)
+
+    nextTick(() => {
+      const newPos = start + text.length
+      textarea.setSelectionRange(newPos, newPos)
+    })
+  }
 }
 
 function handleSymbolSelect(symbol: string) {
   handleInsert(symbol)
 }
 
+// Handle inserting color/format codes into item name
+function handleNameInsert(code: string) {
+  if (!nameInputRef.value) return
+
+  const input = nameInputRef.value
+  const start = input.selectionStart ?? 0
+  const end = input.selectionEnd ?? 0
+
+  // Insert code at cursor or wrap selected text
+  const before = itemName.value.slice(0, start)
+  const selected = itemName.value.slice(start, end)
+  const after = itemName.value.slice(end)
+
+  if (selected.length > 0) {
+    // Wrap selected text with code and reset
+    itemName.value = `${before}${code}${selected}§r${after}`
+    nextTick(() => {
+      input.setSelectionRange(start + code.length, start + code.length + selected.length)
+      input.focus()
+    })
+  } else {
+    // Just insert the code
+    itemName.value = `${before}${code}${after}`
+    nextTick(() => {
+      const newPos = start + code.length
+      input.setSelectionRange(newPos, newPos)
+      input.focus()
+    })
+  }
+}
+
 function handleTextureSelect(item: TextureItem) {
   selectedTexture.value = item.texture
+  textureSource.value = item.source as 'vanilla' | 'heads' | 'custom'
 }
 
 // Export functions
@@ -131,19 +288,38 @@ async function handleCopyJson() {
 }
 
 async function handleGiveCommand() {
+  // Get the rarity info for Skyblock items
+  const rarityInfo = RARITIES.find(r => r.name === selectedRarity.value)
+  const rarityColorCode = selectedRarity.value === 'custom'
+    ? findClosestColorCode(customRarityColor.value)
+    : (rarityInfo?.code ?? '6')
+  const rarityDisplayName = selectedRarity.value === 'custom'
+    ? (customRarityName.value || 'CUSTOM')
+    : (rarityInfo?.displayName ?? 'LEGENDARY')
+
   const item = {
     name: itemName.value,
-    type: itemType.value,
+    type: actualItemType.value,
     rarity: selectedRarity.value,
     lore: loreLines.value,
     stats: stats.value,
     abilities: abilities.value,
     texture: selectedTexture.value,
+    isSkyblock: props.isSkyblock,
+    rarityColorCode: rarityColorCode,
+    rarityDisplayName: rarityDisplayName,
+    textureSource: textureSource.value,
+    enchantGlint: enchantGlint.value,
   }
   const command = generateGiveCommand(item)
   const success = await copyToClipboard(command)
   if (success) {
-    alert('Command copied to clipboard!')
+    // Warn about custom URL textures
+    if (textureSource.value === 'custom' && selectedTexture.value) {
+      alert('Command copied to clipboard!\n\nNote: Custom image URL textures will NOT work in Minecraft. Only vanilla items, player heads (via username), and skull textures (via texture hash) can be used in-game.')
+    } else {
+      alert('Command copied to clipboard!')
+    }
   }
 }
 
@@ -179,10 +355,47 @@ async function handleShare() {
         <!-- Item Name -->
         <div>
           <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">Item Name</label>
+          <!-- Color toolbar for name (vanilla items only) -->
+          <div v-if="!isSkyblock" class="flex flex-wrap gap-1 p-2 bg-[#2d2d2d] border-b border-[#1a1a1a] rounded-t">
+            <button
+              v-for="code in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']"
+              :key="'name-' + code"
+              class="w-5 h-5 text-[10px] font-minecraft hover:scale-110 transition-transform"
+              :class="`mc-${code}`"
+              :title="`§${code}`"
+              @click="handleNameInsert(`§${code}`)"
+            >
+              §
+            </button>
+            <div class="w-px h-5 bg-[#555555] mx-1" />
+            <button
+              class="px-2 h-5 text-[10px] font-minecraft font-bold bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+              title="Bold"
+              @click="handleNameInsert('§l')"
+            >
+              B
+            </button>
+            <button
+              class="px-2 h-5 text-[10px] font-minecraft italic bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+              title="Italic"
+              @click="handleNameInsert('§o')"
+            >
+              I
+            </button>
+            <button
+              class="px-2 h-5 text-[10px] font-minecraft bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+              title="Reset"
+              @click="handleNameInsert('§r')"
+            >
+              R
+            </button>
+          </div>
           <input
+            ref="nameInputRef"
             v-model="itemName"
             type="text"
             class="mc-input"
+            :class="{ 'rounded-t-none': !isSkyblock }"
             placeholder="Enter item name..."
           >
         </div>
@@ -197,6 +410,7 @@ async function handleShare() {
             <div class="w-12 h-12 flex items-center justify-center">
               <img
                 v-if="selectedTexture"
+                :key="selectedTexture"
                 :src="selectedTexture"
                 alt="Selected texture"
                 class="w-10 h-10 object-contain"
@@ -210,13 +424,29 @@ async function handleShare() {
               {{ selectedTexture ? 'Change texture' : 'Select texture' }}
             </span>
           </button>
+          <!-- Enchant glint toggle -->
+          <div class="flex items-center gap-2 mt-2">
+            <input
+              id="enchant-glint"
+              v-model="enchantGlint"
+              type="checkbox"
+              class="w-4 h-4 accent-[#AA00FF]"
+            >
+            <label for="enchant-glint" class="font-minecraft text-xs text-[#AA00FF] cursor-pointer">
+              Enchant Glint
+            </label>
+          </div>
         </div>
 
         <!-- Skyblock-specific options -->
         <template v-if="isSkyblock">
           <div class="grid grid-cols-2 gap-4">
             <!-- Rarity -->
-            <RaritySelector v-model="selectedRarity" />
+            <RaritySelector
+              v-model="selectedRarity"
+              v-model:custom-name="customRarityName"
+              v-model:custom-color="customRarityColor"
+            />
 
             <!-- Item Type -->
             <div>
@@ -233,7 +463,29 @@ async function handleShare() {
                   {{ type.label }}
                 </option>
               </select>
+              <!-- Custom item type input -->
+              <input
+                v-if="itemType === 'custom'"
+                v-model="customItemType"
+                type="text"
+                class="mc-input mt-2 text-xs"
+                placeholder="Enter custom type..."
+              >
             </div>
+          </div>
+
+          <!-- Dungeonized checkbox -->
+          <div class="flex items-center gap-2 mt-2">
+            <input
+              id="dungeonized"
+              v-model="isDungeonized"
+              type="checkbox"
+              class="w-4 h-4 accent-[#AA00AA]"
+            >
+            <label for="dungeonized" class="font-minecraft text-xs text-[#AA00AA] cursor-pointer">
+              Dungeonized
+            </label>
+            <span class="text-[10px] text-[#555555]">(Shows "DUNGEON" in rarity)</span>
           </div>
 
           <!-- Stats Editor -->
@@ -244,47 +496,16 @@ async function handleShare() {
 
         <!-- Lore Editor -->
         <div class="border-t border-[#373737] pt-4">
-          <div class="flex items-center justify-between mb-2">
-            <label class="font-minecraft text-xs text-[#AAAAAA]">Item Lore</label>
+          <label class="font-minecraft text-xs text-[#AAAAAA] mb-2 block">Item Lore</label>
 
-            <!-- Editor mode tabs -->
-            <div class="flex">
-              <button
-                class="px-3 py-1 font-minecraft text-[10px] transition-colors"
-                :class="editorMode === 'markdown' ? 'bg-[#3d3d3d] text-white' : 'bg-[#2d2d2d] text-[#AAAAAA]'"
-                @click="editorMode = 'markdown'"
-              >
-                Markdown
-              </button>
-              <button
-                class="px-3 py-1 font-minecraft text-[10px] transition-colors"
-                :class="editorMode === 'minecraft' ? 'bg-[#3d3d3d] text-white' : 'bg-[#2d2d2d] text-[#AAAAAA]'"
-                @click="editorMode = 'minecraft'"
-              >
-                § Codes
-              </button>
-            </div>
-          </div>
-
-          <!-- Toolbar (Markdown mode) -->
-          <MarkdownToolbar
-            v-if="editorMode === 'markdown'"
-            @insert="handleInsert"
-            @wrap="handleWrap"
-            @symbol="showSymbolPicker = true"
-          />
-
-          <!-- Quick codes (Minecraft mode) -->
-          <div
-            v-else
-            class="flex flex-wrap gap-1 p-2 bg-[#2d2d2d] border-b border-[#1a1a1a]"
-          >
+          <!-- Color codes toolbar -->
+          <div class="flex flex-wrap gap-1 p-2 bg-[#2d2d2d] border-b border-[#1a1a1a]">
             <button
               v-for="code in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']"
               :key="code"
               class="w-5 h-5 text-[10px] font-minecraft hover:scale-110 transition-transform"
               :class="`mc-${code}`"
-              :title="`§${code}`"
+              :title="`§${code} (select text to wrap)`"
               @click="handleInsert(`§${code}`)"
             >
               §
@@ -292,18 +513,21 @@ async function handleShare() {
             <div class="w-px h-5 bg-[#555555] mx-1" />
             <button
               class="px-2 h-5 text-[10px] font-minecraft font-bold bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+              title="Bold"
               @click="handleInsert('§l')"
             >
               B
             </button>
             <button
               class="px-2 h-5 text-[10px] font-minecraft italic bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+              title="Italic"
               @click="handleInsert('§o')"
             >
               I
             </button>
             <button
               class="px-2 h-5 text-[10px] font-minecraft bg-[#3d3d3d] hover:bg-[#4d4d4d]"
+              title="Reset"
               @click="handleInsert('§r')"
             >
               R
@@ -311,6 +535,7 @@ async function handleShare() {
             <div class="w-px h-5 bg-[#555555] mx-1" />
             <button
               class="px-2 h-5 text-[10px] font-minecraft bg-[#3d3d3d] hover:bg-[#4d4d4d] text-[#FF5555]"
+              title="Insert Symbol"
               @click="showSymbolPicker = true"
             >
               ❤
@@ -322,11 +547,11 @@ async function handleShare() {
             ref="textareaRef"
             v-model="rawLore"
             class="mc-input min-h-[120px] resize-y font-minecraft text-sm"
-            :placeholder="editorMode === 'markdown' ? 'Use **bold**, *italic*, ~~strikethrough~~...' : 'Use §c for red, §l for bold...'"
+            placeholder="Use §c for red, §l for bold... Select text and click a color to wrap it."
           />
 
           <p class="font-minecraft text-[10px] text-[#555555] mt-1">
-            {{ editorMode === 'markdown' ? 'Tip: Use {red}text{/red} for colors' : 'Tip: §7 is gray, §c is red, §6 is gold' }}
+            Tip: Select text and click a color to wrap it. §7 is gray, §c is red, §6 is gold
           </p>
         </div>
       </div>
@@ -344,13 +569,18 @@ async function handleShare() {
           ref="itemPreviewRef"
           :name="itemName"
           :rarity="selectedRarity"
-          :item-type="itemType"
+          :custom-rarity-name="customRarityName"
+          :custom-rarity-color="customRarityColor"
+          :name-color="nameColor"
+          :item-type="actualItemType"
           :lore="loreLines"
           :stats="stats"
           :gemstone-slots="gemstoneSlots"
           :abilities="abilities"
           :texture="selectedTexture"
           :is-skyblock="isSkyblock"
+          :is-dungeonized="isDungeonized"
+          :enchant-glint="enchantGlint"
         />
       </div>
 

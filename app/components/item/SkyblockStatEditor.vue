@@ -113,7 +113,7 @@ const activeTab = ref<'stats' | 'gemstones' | 'abilities'>('stats')
 const activeStatCategory = ref<keyof typeof statCategories>('combat')
 
 function updateStat(stat: string, value: string) {
-  const numValue = parseInt(value) || 0
+  const numValue = parseFloat(value) || 0
   const newStats = { ...props.modelValue }
 
   if (numValue === 0) {
@@ -296,6 +296,7 @@ function handleSymbolSelect(symbol: string) {
               </label>
               <input
                 type="number"
+                step="any"
                 :value="getStatValue(stat)"
                 class="mc-input text-xs py-1 w-full"
                 :placeholder="isPercentStat(stat) ? '%' : ''"

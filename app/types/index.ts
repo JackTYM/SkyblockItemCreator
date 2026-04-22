@@ -64,7 +64,10 @@ export const RARITIES: Rarity[] = [
   { name: 'mythic', displayName: 'MYTHIC', color: '#FF55FF', code: 'd', bgClass: 'bg-pink-500/20' },
   { name: 'divine', displayName: 'DIVINE', color: '#55FFFF', code: 'b', bgClass: 'bg-cyan-400/20' },
   { name: 'special', displayName: 'SPECIAL', color: '#FF5555', code: 'c', bgClass: 'bg-red-500/20' },
-  { name: 'very-special', displayName: 'VERY SPECIAL', color: '#AA0000', code: '4', bgClass: 'bg-red-900/20' },
+  { name: 'very-special', displayName: 'VERY SPECIAL', color: '#FF5555', code: 'c', bgClass: 'bg-red-500/20' },
+  { name: 'supreme', displayName: 'SUPREME', color: '#AA0000', code: '4', bgClass: 'bg-red-900/20' },
+  { name: 'ultimate', displayName: 'ULTIMATE', color: '#AA0000', code: '4', bgClass: 'bg-red-900/20' },
+  { name: 'admin', displayName: 'ADMIN', color: '#AA0000', code: '4', bgClass: 'bg-red-900/20' },
 ]
 
 // Skyblock stat symbols
@@ -190,6 +193,7 @@ export interface CraftingSlot {
   texture: string | null
   name: string | null
   count: number
+  glint?: boolean
 }
 
 export interface CraftingRecipe {

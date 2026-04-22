@@ -33,6 +33,22 @@ function clearAll() {
   })
 }
 
+function toggleSlotGlint(row: number, col: number) {
+  const newGrid = props.modelValue.grid.map((r, ri) =>
+    r.map((c, ci) =>
+      ri === row && ci === col ? { ...c, glint: !c.glint } : c
+    )
+  )
+  emit('update:modelValue', { ...props.modelValue, grid: newGrid })
+}
+
+function toggleResultGlint() {
+  emit('update:modelValue', {
+    ...props.modelValue,
+    result: { ...props.modelValue.result, glint: !props.modelValue.result.glint },
+  })
+}
+
 // Minecraft textures from InventivetalentDev/minecraft-assets
 const blackPane = 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/block/black_stained_glass.png'
 const redPane = 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/block/red_stained_glass.png'
@@ -124,33 +140,61 @@ const gridLayout = computed<GridSlot[][]>(() => {
             <!-- Craft slot -->
             <div
               v-else-if="slot.type === 'craft'"
-              class="slot slot-empty craft-slot"
+              class="slot slot-empty craft-slot group"
               @click="emit('slotClick', slot.craftRow!, slot.craftCol!)"
             >
-              <img
-                v-if="getSlot(slot.craftRow!, slot.craftCol!).texture"
-                :src="getSlot(slot.craftRow!, slot.craftCol!).texture!"
-                class="item-img"
-              >
+              <div v-if="getSlot(slot.craftRow!, slot.craftCol!).texture" class="relative">
+                <img
+                  :src="getSlot(slot.craftRow!, slot.craftCol!).texture!"
+                  class="item-img"
+                >
+                <div
+                  v-if="getSlot(slot.craftRow!, slot.craftCol!).glint"
+                  class="absolute inset-0 glint-overlay pointer-events-none"
+                />
+              </div>
               <span
                 v-if="getSlot(slot.craftRow!, slot.craftCol!).count > 1"
                 class="count"
               >
                 {{ getSlot(slot.craftRow!, slot.craftCol!).count }}
               </span>
+              <!-- Glint toggle -->
+              <button
+                v-if="getSlot(slot.craftRow!, slot.craftCol!).texture"
+                class="absolute -top-1 -left-1 w-4 h-4 text-[8px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
+                :class="getSlot(slot.craftRow!, slot.craftCol!).glint ? 'bg-[#AA00FF] text-white' : 'bg-[#555] text-[#aaa]'"
+                @click.stop="toggleSlotGlint(slot.craftRow!, slot.craftCol!)"
+              >
+                ✦
+              </button>
             </div>
 
             <!-- Result slot -->
             <div
               v-else-if="slot.type === 'result'"
-              class="slot slot-empty result-slot"
+              class="slot slot-empty result-slot group"
               @click="emit('resultClick')"
             >
               <template v-if="modelValue.result.texture">
-                <img :src="modelValue.result.texture" class="item-img">
+                <div class="relative">
+                  <img :src="modelValue.result.texture" class="item-img">
+                  <div
+                    v-if="modelValue.result.glint"
+                    class="absolute inset-0 glint-overlay pointer-events-none"
+                  />
+                </div>
                 <span v-if="modelValue.result.count > 1" class="count">
                   {{ modelValue.result.count }}
                 </span>
+                <!-- Glint toggle -->
+                <button
+                  class="absolute -top-1 -left-1 w-4 h-4 text-[8px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
+                  :class="modelValue.result.glint ? 'bg-[#AA00FF] text-white' : 'bg-[#555] text-[#aaa]'"
+                  @click.stop="toggleResultGlint"
+                >
+                  ✦
+                </button>
               </template>
               <img v-else :src="barrier" class="item-img">
             </div>
@@ -262,6 +306,24 @@ const gridLayout = computed<GridSlot[][]>(() => {
   color: white;
   text-shadow: 1px 1px 0 #3f3f3f;
   pointer-events: none;
+}
+
+.glint-overlay {
+  background:
+    linear-gradient(
+      -45deg,
+      transparent 0%,
+      rgba(120, 80, 200, 0.3) 15%,
+      rgba(180, 100, 255, 0.5) 25%,
+      transparent 35%,
+      transparent 45%,
+      rgba(100, 60, 180, 0.3) 55%,
+      rgba(160, 80, 240, 0.5) 65%,
+      transparent 75%,
+      transparent 85%,
+      rgba(140, 90, 220, 0.4) 95%
+    );
+  mix-blend-mode: screen;
 }
 
 </style>

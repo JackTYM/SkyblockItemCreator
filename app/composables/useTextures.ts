@@ -252,7 +252,9 @@ export function useTextures() {
       const img = new Image()
       img.onload = () => resolve(true)
       img.onerror = () => resolve(false)
-      img.src = url
+      // Add cache-busting to prevent stale validation results
+      const cacheBuster = `${url.includes('?') ? '&' : '?'}_cb=${Date.now()}`
+      img.src = url + cacheBuster
     })
   }
 

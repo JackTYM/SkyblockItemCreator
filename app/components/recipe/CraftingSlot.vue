@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   click: []
   clear: []
+  toggleGlint: []
 }>()
 
 const sizes = {
@@ -38,13 +39,20 @@ const slotClass = computed(() => {
     class="relative group cursor-pointer"
     @click="emit('click')"
   >
-    <!-- Item texture -->
-    <img
-      v-if="slot.texture"
-      :src="slot.texture"
-      :alt="slot.name || 'Item'"
-      class="w-4/5 h-4/5 object-contain pixelated"
-    >
+    <!-- Item texture with optional glint -->
+    <div v-if="slot.texture" class="relative w-4/5 h-4/5">
+      <img
+        :key="slot.texture"
+        :src="slot.texture"
+        :alt="slot.name || 'Item'"
+        class="w-full h-full object-contain pixelated"
+      >
+      <!-- Glint overlay -->
+      <div
+        v-if="slot.glint"
+        class="absolute inset-0 glint-overlay pointer-events-none"
+      />
+    </div>
 
     <!-- Count badge -->
     <span
@@ -53,6 +61,17 @@ const slotClass = computed(() => {
     >
       {{ slot.count }}
     </span>
+
+    <!-- Glint toggle button -->
+    <button
+      v-if="slot.texture && !disabled"
+      class="absolute -top-1 -left-1 w-4 h-4 text-[8px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
+      :class="slot.glint ? 'bg-[#AA00FF] text-white' : 'bg-[#555] text-[#aaa]'"
+      title="Toggle enchant glint"
+      @click.stop="emit('toggleGlint')"
+    >
+      ✦
+    </button>
 
     <!-- Clear button -->
     <button
@@ -81,5 +100,23 @@ const slotClass = computed(() => {
 .pixelated {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.glint-overlay {
+  background:
+    linear-gradient(
+      -45deg,
+      transparent 0%,
+      rgba(120, 80, 200, 0.3) 15%,
+      rgba(180, 100, 255, 0.5) 25%,
+      transparent 35%,
+      transparent 45%,
+      rgba(100, 60, 180, 0.3) 55%,
+      rgba(160, 80, 240, 0.5) 65%,
+      transparent 75%,
+      transparent 85%,
+      rgba(140, 90, 220, 0.4) 95%
+    );
+  mix-blend-mode: screen;
 }
 </style>

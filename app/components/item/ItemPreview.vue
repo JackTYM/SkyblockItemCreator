@@ -6,6 +6,9 @@ import type { Rarity } from '~/types'
 interface Props {
   name: string
   rarity: string
+  customRarityName?: string
+  customRarityColor?: string
+  nameColor?: string // Color code for vanilla items (e.g., 'f' for white)
   itemType: string
   lore: string[]
   stats: Record<string, number>
@@ -13,20 +16,89 @@ interface Props {
   abilities?: ItemAbility[]
   texture?: string
   isSkyblock: boolean
+  isDungeonized?: boolean
+  enchantGlint?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  customRarityName: '',
+  customRarityColor: '#FF5555',
+  nameColor: 'f', // Default white for vanilla
+  enchantGlint: false,
+})
 
 const previewRef = ref<HTMLElement>()
 const tooltipRef = ref<HTMLElement>()
 
 const selectedRarity = computed(() => {
+  if (props.rarity === 'custom') {
+    // Find the closest Minecraft color code for the custom color
+    const colorCode = findClosestColorCode(props.customRarityColor)
+    return {
+      name: 'custom',
+      displayName: props.customRarityName || 'CUSTOM',
+      color: props.customRarityColor,
+      code: colorCode,
+      bgClass: 'bg-red-500/20',
+    }
+  }
   return RARITIES.find(r => r.name === props.rarity) ?? RARITIES[0]
 })
 
-// Format the item name with rarity color
+// Find the closest Minecraft color code for a given hex color
+function findClosestColorCode(hexColor: string): string {
+  const mcColors: Record<string, string> = {
+    '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+    '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+    '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+    'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
+  }
+
+  // Parse hex to RGB
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+
+  let closestCode = 'c'
+  let closestDistance = Infinity
+
+  for (const [code, mcHex] of Object.entries(mcColors)) {
+    const mcR = parseInt(mcHex.substring(1, 3), 16)
+    const mcG = parseInt(mcHex.substring(3, 5), 16)
+    const mcB = parseInt(mcHex.substring(5, 7), 16)
+
+    const distance = Math.sqrt(
+      Math.pow(r - mcR, 2) + Math.pow(g - mcG, 2) + Math.pow(b - mcB, 2)
+    )
+
+    if (distance < closestDistance) {
+      closestDistance = distance
+      closestCode = code
+    }
+  }
+
+  return closestCode
+}
+
+// Format the item name with appropriate color
 const formattedName = computed(() => {
-  return `§${selectedRarity.value.code}§l${props.name || 'Item Name'}§r`
+  const name = props.name || 'Item Name'
+
+  // Check if name already has color codes
+  const hasColorCodes = /§[0-9a-fk-or]/i.test(name)
+
+  if (hasColorCodes) {
+    // Name has custom formatting, just add bold at start if not present
+    if (!name.startsWith('§l') && !name.includes('§l')) {
+      return `§l${name}§r`
+    }
+    return `${name}§r`
+  }
+
+  // No custom formatting - apply default color based on mode
+  const colorCode = props.isSkyblock ? selectedRarity.value.code : props.nameColor
+  return `§${colorCode}§l${name}§r`
 })
 
 // Map hex colors to Minecraft color codes
@@ -89,7 +161,8 @@ const customLoreLines = computed(() => {
 // Rarity line
 const rarityLine = computed(() => {
   if (!props.isSkyblock) return ''
-  return `§${selectedRarity.value.code}§l${selectedRarity.value.displayName}${props.itemType ? ` ${props.itemType.toUpperCase()}` : ''}`
+  const dungeonPrefix = props.isDungeonized ? 'DUNGEON ' : ''
+  return `§${selectedRarity.value.code}§l${selectedRarity.value.displayName} ${dungeonPrefix}${props.itemType ? `${props.itemType.toUpperCase()}` : ''}`.trim()
 })
 
 defineExpose({
@@ -109,12 +182,18 @@ defineExpose({
         <!-- Item icon -->
         <div class="flex items-start gap-3 mb-2">
           <div class="mc-slot w-12 h-12 flex-shrink-0 flex items-center justify-center">
-            <img
-              v-if="texture"
-              :src="texture"
-              alt="Item texture"
-              class="w-10 h-10 object-contain"
-            >
+            <div v-if="texture" class="relative w-10 h-10">
+              <img
+                :key="texture"
+                :src="texture"
+                alt="Item texture"
+                class="w-full h-full object-contain pixelated"
+              >
+              <div
+                v-if="enchantGlint"
+                class="absolute inset-0 glint-overlay pointer-events-none"
+              />
+            </div>
             <span
               v-else
               class="text-2xl text-[#555555]"
@@ -215,5 +294,28 @@ defineExpose({
     inset 0 0 0 1px #28007d,
     0 0 0 1px #100010,
     4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.glint-overlay {
+  background:
+    linear-gradient(
+      -45deg,
+      transparent 0%,
+      rgba(120, 80, 200, 0.3) 15%,
+      rgba(180, 100, 255, 0.5) 25%,
+      transparent 35%,
+      transparent 45%,
+      rgba(100, 60, 180, 0.3) 55%,
+      rgba(160, 80, 240, 0.5) 65%,
+      transparent 75%,
+      transparent 85%,
+      rgba(140, 90, 220, 0.4) 95%
+    );
+  mix-blend-mode: screen;
 }
 </style>
