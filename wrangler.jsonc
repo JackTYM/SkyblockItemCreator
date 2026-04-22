@@ -1,5 +1,8 @@
 {
   "name": "skyblock-item-creator",
   "compatibility_date": "2024-11-01",
-  "pages_build_output_dir": "./dist"
+  "pages_build_output_dir": "./dist",
+  "build": {
+    "command": "npm install && npm run build"
+  }
 }
