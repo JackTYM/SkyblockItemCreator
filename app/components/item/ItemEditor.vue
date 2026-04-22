@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { TextureItem, GemstoneSlot, ItemAbility } from '~/types'
-import { RARITIES, MINECRAFT_COLORS } from '~/types'
+import type { TextureItem, GemstoneSlot, ItemAbility, PetHeldItem } from '~/types'
+import { RARITIES, MINECRAFT_COLORS, PET_TYPES } from '~/types'
 import RaritySelector from './RaritySelector.vue'
 import SkyblockStatEditor from './SkyblockStatEditor.vue'
 import SymbolPicker from './SymbolPicker.vue'
 import TexturePicker from './TexturePicker.vue'
 import ItemPreview from './ItemPreview.vue'
+import PetPreview from './PetPreview.vue'
 import MinecraftButton from '../ui/MinecraftButton.vue'
 
 interface Props {
@@ -18,6 +19,7 @@ const { exportAsPng, copyToClipboard, generateGiveCommand } = useExport()
 
 // Preview ref for export
 const itemPreviewRef = ref<InstanceType<typeof ItemPreview>>()
+const petPreviewRef = ref<InstanceType<typeof PetPreview>>()
 
 // Editor state
 const itemName = ref('Custom Item')
@@ -35,6 +37,23 @@ const selectedTexture = ref<string>('')
 const textureSource = ref<'vanilla' | 'heads' | 'custom'>('vanilla')
 const isDungeonized = ref(false)
 const enchantGlint = ref(false)
+
+// Pet-specific state
+const petLevel = ref(100)
+const petType = ref('Combat')
+const customPetType = ref('')
+const petIsMaxLevel = ref(true)
+const petIsMount = ref(false)
+const petXp = ref(0)
+const petHeldItem = ref<PetHeldItem>({ name: '', perk: '' })
+
+// Computed: check if in pet mode
+const isPetMode = computed(() => itemType.value === 'pet')
+
+// Actual pet type (handles custom)
+const actualPetType = computed(() => {
+  return petType.value === 'custom' ? customPetType.value : petType.value
+})
 
 
 // Computed actual item type (handles custom)
@@ -70,6 +89,7 @@ const itemTypes = [
   { value: 'hoe', label: 'Hoe' },
   { value: 'leggings', label: 'Leggings' },
   { value: 'necklace', label: 'Necklace' },
+  { value: 'pet', label: 'Pet' },
   { value: 'pet item', label: 'Pet Item' },
   { value: 'pickaxe', label: 'Pickaxe' },
   { value: 'reforge stone', label: 'Reforge Stone' },
@@ -266,7 +286,9 @@ function handleTextureSelect(item: TextureItem) {
 
 // Export functions
 async function handleExportPng() {
-  if (itemPreviewRef.value?.previewRef) {
+  if (isPetMode.value && petPreviewRef.value?.previewRef) {
+    await exportAsPng(petPreviewRef.value.previewRef, `skyblock-pet-${Date.now()}`)
+  } else if (itemPreviewRef.value?.previewRef) {
     await exportAsPng(itemPreviewRef.value.previewRef, `skyblock-item-${Date.now()}`)
   }
 }
@@ -347,14 +369,14 @@ async function handleShare() {
     <!-- Editor Panel -->
     <div class="mc-panel-dark p-4">
       <h2 class="font-minecraft text-[#FFAA00] mb-4 mc-text-shadow flex items-center gap-2">
-        <span>✎</span>
-        <span>Item Editor</span>
+        <span>{{ isPetMode && isSkyblock ? '🐾' : '✎' }}</span>
+        <span>{{ isPetMode && isSkyblock ? 'Pet Editor' : 'Item Editor' }}</span>
       </h2>
 
       <div class="space-y-4">
         <!-- Item Name -->
         <div>
-          <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">Item Name</label>
+          <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">{{ isPetMode && isSkyblock ? 'Pet Name' : 'Item Name' }}</label>
           <!-- Color toolbar for name (vanilla items only) -->
           <div v-if="!isSkyblock" class="flex flex-wrap gap-1 p-2 bg-[#2d2d2d] border-b border-[#1a1a1a] rounded-t">
             <button
@@ -402,7 +424,7 @@ async function handleShare() {
 
         <!-- Texture selector -->
         <div>
-          <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">Item Texture</label>
+          <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">{{ isPetMode && isSkyblock ? 'Pet Texture' : 'Item Texture' }}</label>
           <button
             class="mc-slot mc-slot-hover w-full h-16 flex items-center justify-center gap-3"
             @click="showTexturePicker = true"
@@ -424,8 +446,8 @@ async function handleShare() {
               {{ selectedTexture ? 'Change texture' : 'Select texture' }}
             </span>
           </button>
-          <!-- Enchant glint toggle -->
-          <div class="flex items-center gap-2 mt-2">
+          <!-- Enchant glint toggle (hidden for pets) -->
+          <div v-if="!(isPetMode && isSkyblock)" class="flex items-center gap-2 mt-2">
             <input
               id="enchant-glint"
               v-model="enchantGlint"
@@ -474,24 +496,130 @@ async function handleShare() {
             </div>
           </div>
 
-          <!-- Dungeonized checkbox -->
-          <div class="flex items-center gap-2 mt-2">
-            <input
-              id="dungeonized"
-              v-model="isDungeonized"
-              type="checkbox"
-              class="w-4 h-4 accent-[#AA00AA]"
-            >
-            <label for="dungeonized" class="font-minecraft text-xs text-[#AA00AA] cursor-pointer">
-              Dungeonized
-            </label>
-            <span class="text-[10px] text-[#555555]">(Shows "DUNGEON" in rarity)</span>
-          </div>
+          <!-- Pet-specific options -->
+          <template v-if="isPetMode">
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Pet Level -->
+              <div>
+                <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">Pet Level</label>
+                <input
+                  v-model.number="petLevel"
+                  type="number"
+                  min="1"
+                  max="200"
+                  class="mc-input"
+                >
+              </div>
 
-          <!-- Stats Editor -->
-          <div class="border-t border-[#373737] pt-4">
-            <SkyblockStatEditor v-model="stats" v-model:gemstone-slots="gemstoneSlots" v-model:abilities="abilities" />
-          </div>
+              <!-- Pet Type -->
+              <div>
+                <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">Pet Type</label>
+                <select
+                  v-model="petType"
+                  class="mc-select w-full"
+                >
+                  <option
+                    v-for="pType in PET_TYPES"
+                    :key="pType"
+                    :value="pType"
+                  >
+                    {{ pType }}
+                  </option>
+                  <option value="custom">Custom...</option>
+                </select>
+                <input
+                  v-if="petType === 'custom'"
+                  v-model="customPetType"
+                  type="text"
+                  class="mc-input mt-2 text-xs"
+                  placeholder="Enter pet type..."
+                >
+              </div>
+            </div>
+
+            <!-- Max Level & XP -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="font-minecraft text-xs text-[#AAAAAA] mb-1 block">XP Amount</label>
+                <input
+                  v-model.number="petXp"
+                  type="number"
+                  min="0"
+                  class="mc-input"
+                >
+              </div>
+              <div class="flex flex-col gap-2 pt-3">
+                <div class="flex items-center gap-2">
+                  <input
+                    id="max-level"
+                    v-model="petIsMaxLevel"
+                    type="checkbox"
+                    class="w-4 h-4 accent-[#55FFFF]"
+                  >
+                  <label for="max-level" class="font-minecraft text-xs text-[#55FFFF] cursor-pointer">
+                    Max Level
+                  </label>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input
+                    id="is-mount"
+                    v-model="petIsMount"
+                    type="checkbox"
+                    class="w-4 h-4 accent-[#FFAA00]"
+                  >
+                  <label for="is-mount" class="font-minecraft text-xs text-[#FFAA00] cursor-pointer">
+                    Mount
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Held Item -->
+            <div class="border-t border-[#373737] pt-4">
+              <label class="font-minecraft text-xs text-[#AAAAAA] mb-2 block">Held Item</label>
+              <div class="space-y-2">
+                <input
+                  v-model="petHeldItem.name"
+                  type="text"
+                  class="mc-input text-xs"
+                  placeholder="Item name (e.g., Washed-up Souvenir)"
+                >
+                <input
+                  v-model="petHeldItem.perk"
+                  type="text"
+                  class="mc-input text-xs"
+                  placeholder="Item perk (e.g., Grants +5α Sea Creature Chance.)"
+                >
+              </div>
+            </div>
+
+            <!-- Stats Editor (without gemstones for pets) -->
+            <div class="border-t border-[#373737] pt-4">
+              <SkyblockStatEditor v-model="stats" v-model:abilities="abilities" :hide-gemstones="true" />
+            </div>
+          </template>
+
+          <!-- Regular item options (non-pet) -->
+          <template v-else>
+            <!-- Dungeonized checkbox -->
+            <div class="flex items-center gap-2 mt-2">
+              <input
+                id="dungeonized"
+                v-model="isDungeonized"
+                type="checkbox"
+                class="w-4 h-4 accent-[#AA00AA]"
+              >
+              <label for="dungeonized" class="font-minecraft text-xs text-[#AA00AA] cursor-pointer">
+                Dungeonized
+              </label>
+              <span class="text-[10px] text-[#555555]">(Shows "DUNGEON" in rarity)</span>
+            </div>
+
+            <!-- Stats Editor -->
+            <div class="border-t border-[#373737] pt-4">
+              <SkyblockStatEditor v-model="stats" v-model:gemstone-slots="gemstoneSlots" v-model:abilities="abilities" />
+            </div>
+          </template>
         </template>
 
         <!-- Lore Editor -->
@@ -565,7 +693,28 @@ async function handleShare() {
       </h2>
 
       <div class="min-h-[300px] flex items-center justify-center bg-black/30 border border-[#373737] p-4">
+        <!-- Pet Preview -->
+        <PetPreview
+          v-if="isPetMode && isSkyblock"
+          ref="petPreviewRef"
+          :name="itemName"
+          :rarity="selectedRarity"
+          :custom-rarity-name="customRarityName"
+          :custom-rarity-color="customRarityColor"
+          :pet-type="actualPetType"
+          :level="petLevel"
+          :is-max-level="petIsMaxLevel"
+          :is-mount="petIsMount"
+          :xp="petXp"
+          :stats="stats"
+          :abilities="abilities"
+          :held-item="petHeldItem"
+          :texture="selectedTexture"
+          :lore="loreLines"
+        />
+        <!-- Item Preview -->
         <ItemPreview
+          v-else
           ref="itemPreviewRef"
           :name="itemName"
           :rarity="selectedRarity"

@@ -5,11 +5,13 @@ interface Props {
   modelValue: Record<string, number>
   gemstoneSlots?: GemstoneSlot[]
   abilities?: ItemAbility[]
+  hideGemstones?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   gemstoneSlots: () => [],
   abilities: () => [],
+  hideGemstones: false,
 })
 
 const emit = defineEmits<{
@@ -62,7 +64,7 @@ const statCategories = {
     name: 'Luck',
     icon: '✯',
     color: '#55FFFF',
-    stats: ['magic_find', 'pet_luck'],
+    stats: ['magic_find', 'pet_luck', 'treasure_chance'],
   },
   fortune: {
     name: 'Fortune',
@@ -80,7 +82,7 @@ const statCategories = {
     name: 'Farming',
     icon: 'Ⓟ',
     color: '#00AA00',
-    stats: ['bonus_pest_chance'],
+    stats: ['bonus_pest_chance', 'overbloom'],
   },
   fishing: {
     name: 'Fishing',
@@ -134,7 +136,7 @@ function getStatValue(stat: string): number {
 }
 
 function isPercentStat(stat: string): boolean {
-  return ['crit_chance', 'crit_damage', 'sea_creature_chance', 'trophy_fish_chance', 'bonus_pest_chance'].includes(stat)
+  return ['crit_chance', 'crit_damage', 'sea_creature_chance', 'trophy_fish_chance', 'bonus_pest_chance', 'overbloom', 'treasure_chance'].includes(stat)
 }
 
 // Gemstone functions
@@ -235,6 +237,7 @@ function handleSymbolSelect(symbol: string) {
         Stats
       </button>
       <button
+        v-if="!hideGemstones"
         class="px-3 py-1.5 text-xs rounded transition-colors"
         :class="activeTab === 'gemstones' ? 'bg-[#3d7a37] text-white' : 'bg-[#2d2d2d] text-[#888] hover:bg-[#353535]'"
         @click="activeTab = 'gemstones'"
@@ -309,7 +312,7 @@ function handleSymbolSelect(symbol: string) {
     </template>
 
     <!-- Gemstones Tab -->
-    <template v-else-if="activeTab === 'gemstones'">
+    <template v-else-if="activeTab === 'gemstones' && !hideGemstones">
       <div class="p-3 bg-[#1a1a1a] border border-[#333] rounded space-y-3">
         <p class="text-xs text-[#AA00AA] flex items-center gap-2">
           <span class="text-lg">✧</span>

@@ -110,6 +110,7 @@ export const SKYBLOCK_STATS: SkyblockStat[] = [
   // Luck Stats - Light Purple / Aqua
   { symbol: '☘', name: 'Pet Luck', stat: 'pet_luck', color: '#FF55FF' },
   { symbol: '✯', name: 'Magic Find', stat: 'magic_find', color: '#55FFFF' },
+  { symbol: '✧', name: 'Treasure Chance', stat: 'treasure_chance', color: '#FFAA00' },
 
   // Fortune Stats - Gold
   { symbol: '☘', name: 'Mining Fortune', stat: 'mining_fortune', color: '#FFAA00' },
@@ -125,10 +126,11 @@ export const SKYBLOCK_STATS: SkyblockStat[] = [
 
   // Farming Stats
   { symbol: 'Ⓟ', name: 'Bonus Pest Chance', stat: 'bonus_pest_chance', color: '#00AA00' },
+  { symbol: '❀', name: 'Overbloom', stat: 'overbloom', color: '#FFAA00' },
 
   // Fishing Stats
   { symbol: '☂', name: 'Fishing Speed', stat: 'fishing_speed', color: '#55FFFF' },
-  { symbol: 'α', name: 'Sea Creature Chance', stat: 'sea_creature_chance', color: '#00AA00' },
+  { symbol: 'α', name: 'Sea Creature Chance', stat: 'sea_creature_chance', color: '#00CED1' },
   { symbol: '⚓', name: 'Double Hook', stat: 'double_hook', color: '#55FFFF' },
   { symbol: '✧', name: 'Trophy Fish Chance', stat: 'trophy_fish_chance', color: '#FFAA00' },
 
@@ -262,4 +264,33 @@ export interface GemstoneSlot {
 export interface ItemAbility {
   name: string
   description: string // Can contain newlines and formatting codes
+}
+
+// Pet types
+export const PET_TYPES = [
+  'Combat',
+  'Mining',
+  'Farming',
+  'Foraging',
+  'Fishing',
+  'Enchanting',
+  'Alchemy',
+  'Gabagool',
+] as const
+
+export type PetType = typeof PET_TYPES[number]
+
+// Pet held item
+export interface PetHeldItem {
+  name: string
+  perk: string // Description of what the item does
+}
+
+// Pet data
+export interface PetData {
+  level: number
+  petType: PetType | string
+  isMaxLevel: boolean
+  xp: number
+  heldItem?: PetHeldItem
 }

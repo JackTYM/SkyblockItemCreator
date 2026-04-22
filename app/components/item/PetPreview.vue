@@ -1,30 +1,37 @@
 <script setup lang="ts">
-import { RARITIES, SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, type GemstoneSlot, type ItemAbility } from '~/types'
+import { RARITIES, SKYBLOCK_STATS, type ItemAbility, type PetHeldItem } from '~/types'
 import MinecraftText from './MinecraftText.vue'
-import type { Rarity } from '~/types'
 
 interface Props {
   name: string
   rarity: string
   customRarityName?: string
   customRarityColor?: string
-  nameColor?: string // Color code for vanilla items (e.g., 'f' for white)
-  itemType: string
-  lore: string[]
+  petType: string
+  level: number
+  isMaxLevel: boolean
+  isMount: boolean
+  xp: number
   stats: Record<string, number>
-  gemstoneSlots?: GemstoneSlot[]
   abilities?: ItemAbility[]
+  heldItem?: PetHeldItem
   texture?: string
-  isSkyblock: boolean
-  isDungeonized?: boolean
-  enchantGlint?: boolean
+  lore?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   customRarityName: '',
   customRarityColor: '#FF5555',
-  nameColor: 'f', // Default white for vanilla
-  enchantGlint: false,
+  level: 1,
+  isMaxLevel: false,
+  isMount: false,
+  xp: 0,
+  lore: () => [],
+})
+
+// Custom lore lines (filtered)
+const customLoreLines = computed(() => {
+  return props.lore.filter(l => l.trim())
 })
 
 const previewRef = ref<HTMLElement>()
@@ -32,7 +39,6 @@ const tooltipRef = ref<HTMLElement>()
 
 const selectedRarity = computed(() => {
   if (props.rarity === 'custom') {
-    // Find the closest Minecraft color code for the custom color
     const colorCode = findClosestColorCode(props.customRarityColor)
     return {
       name: 'custom',
@@ -45,7 +51,6 @@ const selectedRarity = computed(() => {
   return RARITIES.find(r => r.name === props.rarity) ?? RARITIES[0]
 })
 
-// Find the closest Minecraft color code for a given hex color
 function findClosestColorCode(hexColor: string): string {
   const mcColors: Record<string, string> = {
     '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
@@ -54,7 +59,6 @@ function findClosestColorCode(hexColor: string): string {
     'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
   }
 
-  // Parse hex to RGB
   const hex = hexColor.replace('#', '')
   const r = parseInt(hex.substring(0, 2), 16)
   const g = parseInt(hex.substring(2, 4), 16)
@@ -81,58 +85,35 @@ function findClosestColorCode(hexColor: string): string {
   return closestCode
 }
 
-// Format the item name with appropriate color
+// Format the pet name with level (level is gray, name is rarity color)
 const formattedName = computed(() => {
-  const name = props.name || 'Item Name'
+  const name = props.name || 'Pet Name'
+  return `§7[Lvl ${props.level}] §${selectedRarity.value.code}${name}`
+})
 
-  // Check if name already has color codes
-  const hasColorCodes = /§[0-9a-fk-or]/i.test(name)
-
-  if (hasColorCodes) {
-    // Name has custom formatting, just add bold at start if not present
-    if (!name.startsWith('§l') && !name.includes('§l')) {
-      return `§l${name}§r`
-    }
-    return `${name}§r`
-  }
-
-  // No custom formatting - apply default color based on mode
-  const colorCode = props.isSkyblock ? selectedRarity.value.code : props.nameColor
-  return `§${colorCode}§l${name}§r`
+// Pet type line (dark gray)
+const petTypeLine = computed(() => {
+  const suffix = props.isMount ? 'Mount' : 'Pet'
+  return `§8${props.petType} ${suffix}`
 })
 
 // Map hex colors to Minecraft color codes
 function getColorCode(hexColor: string): string {
   const colorMap: Record<string, string> = {
-    '#FF5555': 'c', // Red
-    '#5555FF': '9', // Blue
-    '#55FF55': 'a', // Green
-    '#55FFFF': 'b', // Aqua
+    '#FF5555': 'c',
+    '#5555FF': '9',
+    '#55FF55': 'a',
+    '#55FFFF': 'b',
     '#00CED1': '3', // Turquoise -> dark aqua
-    '#FFFF55': 'e', // Yellow
-    '#FFAA00': '6', // Gold
-    '#FFFFFF': 'f', // White
-    '#AA00AA': '5', // Purple
-    '#AAAAAA': '7', // Gray
-    '#00AA00': '2', // Dark Green
+    '#FFFF55': 'e',
+    '#FFAA00': '6',
+    '#FFFFFF': 'f',
+    '#AA00AA': '5',
+    '#AAAAAA': '7',
+    '#00AA00': '2',
   }
   return colorMap[hexColor] || 'c'
 }
-
-// Format gemstone slots for display - returns array for separate rendering
-const gemstoneSlotData = computed(() => {
-  if (!props.gemstoneSlots || props.gemstoneSlots.length === 0) return []
-
-  return props.gemstoneSlots.map(slot => {
-    const gemType = GEMSTONE_TYPES.find(g => g.id === slot.type)
-    const gemRarity = GEMSTONE_RARITIES.find(r => r.id === slot.rarity)
-    if (!gemType || !gemRarity) return null
-    return {
-      symbol: gemType.symbol,
-      color: gemRarity.color,
-    }
-  }).filter(Boolean) as { symbol: string; color: string }[]
-})
 
 // Format stats for display (ordered by SKYBLOCK_STATS)
 const formattedStats = computed(() => {
@@ -147,23 +128,15 @@ const formattedStats = computed(() => {
     const prefix = value > 0 ? '+' : ''
     const suffix = percentStats.includes(stat.stat) ? '%' : ''
     const colorCode = getColorCode(stat.color)
-    // Skyblock format: "Damage: +100" with stat-specific color
     lines.push(`§7${stat.name}: §${colorCode}${prefix}${value}${suffix}`)
   }
 
   return lines
 })
 
-// Custom lore lines (filtered)
-const customLoreLines = computed(() => {
-  return props.lore.filter(l => l.trim())
-})
-
-// Rarity line
-const rarityLine = computed(() => {
-  if (!props.isSkyblock) return ''
-  const dungeonPrefix = props.isDungeonized ? 'DUNGEON ' : ''
-  return `§${selectedRarity.value.code}§l${selectedRarity.value.displayName} ${dungeonPrefix}${props.itemType ? `${props.itemType.toUpperCase()}` : ''}`.trim()
+// Format XP with commas
+const formattedXp = computed(() => {
+  return props.xp.toLocaleString()
 })
 
 defineExpose({
@@ -178,30 +151,24 @@ defineExpose({
       ref="previewRef"
       class="inline-block"
     >
-      <!-- Minecraft tooltip style container -->
       <div class="relative">
-        <!-- Item icon -->
+        <!-- Pet icon -->
         <div class="flex items-start gap-3 mb-2">
           <div class="mc-slot w-12 h-12 flex-shrink-0 flex items-center justify-center">
-            <div v-if="texture" class="relative w-10 h-10">
-              <img
-                :key="texture"
-                :src="texture"
-                alt="Item texture"
-                class="w-full h-full object-contain pixelated"
-              >
-              <div
-                v-if="enchantGlint"
-                class="absolute inset-0 glint-overlay pointer-events-none"
-              />
-            </div>
+            <img
+              v-if="texture"
+              :key="texture"
+              :src="texture"
+              alt="Pet texture"
+              class="w-10 h-10 object-contain pixelated"
+            >
             <span
               v-else
               class="text-2xl text-[#555555]"
             >?</span>
           </div>
 
-          <!-- Item name -->
+          <!-- Pet name -->
           <div class="pt-1">
             <MinecraftText
               :text="formattedName"
@@ -211,37 +178,45 @@ defineExpose({
         </div>
 
         <!-- Tooltip content -->
-        <div ref="tooltipRef" class="mc-tooltip p-3 min-w-[250px]">
-          <!-- Item name in tooltip -->
+        <div ref="tooltipRef" class="mc-tooltip p-3 min-w-[280px]">
+          <!-- Pet name in tooltip -->
           <MinecraftText
             :text="formattedName"
-            class="text-sm block mb-1"
+            class="text-sm block"
+          />
+          <!-- Pet type -->
+          <MinecraftText
+            :text="petTypeLine"
+            class="text-xs block mb-2"
           />
 
-          <!-- Lore lines -->
           <div class="space-y-0.5">
             <!-- Stats section -->
-            <template v-if="isSkyblock && formattedStats.length > 0">
+            <template v-if="formattedStats.length > 0">
               <MinecraftText
                 v-for="(line, index) in formattedStats"
                 :key="'stat-' + index"
                 :text="line"
                 class="text-xs block"
               />
-              <div class="h-2" />
+              <div class="h-1.5" />
             </template>
 
-            <!-- Gemstone slots -->
-            <template v-if="isSkyblock && gemstoneSlotData.length > 0">
-              <div class="mc-font text-xs mc-text-shadow">
-                <span
-                  v-for="(gem, gIndex) in gemstoneSlotData"
-                  :key="gIndex"
-                  class="gemstone-slot"
-                  :style="{ color: gem.color }"
-                >[<span class="gem-symbol">{{ gem.symbol }}</span>]</span>
-              </div>
-              <div class="h-2" />
+            <!-- Abilities -->
+            <template v-if="abilities && abilities.length > 0">
+              <template v-for="(ability, aIndex) in abilities" :key="'ability-' + aIndex">
+                <MinecraftText
+                  :text="`§6${ability.name}`"
+                  class="text-xs block"
+                />
+                <MinecraftText
+                  v-for="(line, lIndex) in ability.description.split('\n')"
+                  :key="'ability-' + aIndex + '-line-' + lIndex"
+                  :text="line.startsWith('§') ? line : `§7${line}`"
+                  class="text-xs block"
+                />
+                <div class="h-1.5" />
+              </template>
             </template>
 
             <!-- Custom lore -->
@@ -252,34 +227,52 @@ defineExpose({
                 :text="line"
                 class="text-xs block"
               />
-              <div class="h-2" />
+              <div class="h-1.5" />
             </template>
 
-            <!-- Abilities -->
-            <template v-if="isSkyblock && abilities && abilities.length > 0">
-              <template v-for="(ability, aIndex) in abilities" :key="'ability-' + aIndex">
-                <MinecraftText
-                  :text="`§6Item Ability: ${ability.name}`"
-                  class="text-xs block"
-                />
-                <MinecraftText
-                  v-for="(line, lIndex) in ability.description.split('\n')"
-                  :key="'ability-' + aIndex + '-line-' + lIndex"
-                  :text="line.startsWith('§') ? line : `§7${line}`"
-                  class="text-xs block"
-                />
-                <div class="h-2" />
-              </template>
-            </template>
-
-            <!-- Rarity line -->
-            <template v-if="isSkyblock">
-              <div class="h-2" />
+            <!-- Held Item -->
+            <template v-if="heldItem && heldItem.name">
               <MinecraftText
-                :text="rarityLine"
+                :text="`§7Held Item: §b${heldItem.name}`"
                 class="text-xs block"
               />
+              <MinecraftText
+                v-if="heldItem.perk"
+                :text="heldItem.perk.startsWith('§') ? heldItem.perk : `§7${heldItem.perk}`"
+                class="text-xs block"
+              />
+              <div class="h-1.5" />
             </template>
+
+            <!-- Max Level indicator -->
+            <template v-if="isMaxLevel">
+              <MinecraftText
+                text="§b§lMAX LEVEL"
+                class="text-xs block mb-0.5"
+              />
+            </template>
+
+            <!-- XP -->
+            <MinecraftText
+              :text="`§8▸ ${formattedXp} XP`"
+              class="text-xs block"
+            />
+
+            <div class="h-1.5" />
+
+            <!-- Instructions -->
+            <MinecraftText
+              text="§eLeft-click to summon!"
+              class="text-xs block"
+            />
+            <MinecraftText
+              text="§eShift Left-click to toggle as favorite!"
+              class="text-xs block"
+            />
+            <MinecraftText
+              text="§eRight-click to convert to an item!"
+              class="text-xs block"
+            />
           </div>
         </div>
       </div>
@@ -300,23 +293,5 @@ defineExpose({
 .pixelated {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-}
-
-.glint-overlay {
-  background:
-    linear-gradient(
-      -45deg,
-      transparent 0%,
-      rgba(120, 80, 200, 0.3) 15%,
-      rgba(180, 100, 255, 0.5) 25%,
-      transparent 35%,
-      transparent 45%,
-      rgba(100, 60, 180, 0.3) 55%,
-      rgba(160, 80, 240, 0.5) 65%,
-      transparent 75%,
-      transparent 85%,
-      rgba(140, 90, 220, 0.4) 95%
-    );
-  mix-blend-mode: screen;
 }
 </style>
