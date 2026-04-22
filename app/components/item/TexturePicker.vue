@@ -29,6 +29,21 @@ const urlError = ref('')
 const itemCount = ref(1)
 const pendingItem = ref<TextureItem | null>(null)
 
+// Proxy external URLs through images.weserv.nl to add CORS headers for PNG export
+function getProxiedUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    // Don't proxy same-origin URLs or already-proxied URLs
+    if (parsed.origin === window.location.origin || parsed.hostname === 'images.weserv.nl') {
+      return url
+    }
+    // Proxy all external URLs
+    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`
+  } catch {
+    return url
+  }
+}
+
 // Initialize items when modal is shown
 watch(() => props.show, (isShown) => {
   if (isShown && items.value.length === 0) {
@@ -99,15 +114,13 @@ async function searchTexture() {
   const value = textureValue.value.trim()
 
   // Build the mc-heads URL - works with both texture hashes and base64 values
-  // Route through images.weserv.nl proxy to enable PNG export (mc-heads.net lacks CORS for texture hashes)
   const directUrl = `https://mc-heads.net/head/${value}/64`
-  const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(directUrl)}`
 
   // Validate using direct URL first (faster), then use proxied URL for storage
   const isValid = await validateImageUrl(directUrl)
 
   if (isValid) {
-    texturePreview.value = proxiedUrl
+    texturePreview.value = getProxiedUrl(directUrl)
     urlError.value = ''
   } else {
     texturePreview.value = ''
@@ -134,13 +147,14 @@ async function validateCustomUrl() {
   isValidatingUrl.value = true
   urlError.value = ''
 
+  // Validate using direct URL first, then store proxied URL for CORS support
   const isValid = await validateImageUrl(customUrl.value)
 
   if (isValid) {
     pendingItem.value = {
       id: 'custom',
       name: 'Custom Texture',
-      texture: customUrl.value,
+      texture: getProxiedUrl(customUrl.value),
       source: 'custom',
     }
     itemCount.value = 1
