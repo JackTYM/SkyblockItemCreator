@@ -11,6 +11,7 @@ interface Props {
   level: number
   isMaxLevel: boolean
   isMount: boolean
+  isCustomType: boolean
   xp: number
   stats: Record<string, number>
   abilities?: ItemAbility[]
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
   level: 1,
   isMaxLevel: false,
   isMount: false,
+  isCustomType: false,
   xp: 0,
   lore: () => [],
 })
@@ -93,6 +95,10 @@ const formattedName = computed(() => {
 
 // Pet type line (dark gray)
 const petTypeLine = computed(() => {
+  // If custom type, use the full text as-is (no suffix)
+  if (props.isCustomType) {
+    return `§8${props.petType}`
+  }
   const suffix = props.isMount ? 'Mount' : 'Pet'
   return `§8${props.petType} ${suffix}`
 })

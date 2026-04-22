@@ -532,7 +532,7 @@ async function handleShare() {
                   v-model="customPetType"
                   type="text"
                   class="mc-input mt-2 text-xs"
-                  placeholder="Enter pet type..."
+                  placeholder="e.g., Fishing Pet, Boss Mount..."
                 >
               </div>
             </div>
@@ -705,6 +705,7 @@ async function handleShare() {
           :level="petLevel"
           :is-max-level="petIsMaxLevel"
           :is-mount="petIsMount"
+          :is-custom-type="petType === 'custom'"
           :xp="petXp"
           :stats="stats"
           :abilities="abilities"
