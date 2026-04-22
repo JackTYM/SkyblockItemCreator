@@ -1,0 +1,292 @@
+/* Import clean UI font - must be before @tailwind */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Minecraft-style font for preview */
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/minecraft.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Monocraft';
+  src: url('/fonts/Monocraft.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base Styles */
+:root {
+  --mc-slot-size: 36px;
+  --mc-border-dark: #373737;
+  --mc-border-light: #ffffff;
+  --mc-bg: #8b8b8b;
+}
+
+html {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #0f0f0f;
+  color: #e5e5e5;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at top, rgba(255,170,0,0.05) 0%, transparent 50%),
+    linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%);
+}
+
+/* Minecraft-style preview font */
+.mc-font,
+.font-minecraft {
+  font-family: 'Minecraft', 'Monocraft', monospace;
+  font-size: inherit;
+  line-height: 1.4;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
+}
+
+/* Pixelated rendering for item icons */
+.pixelated,
+.mc-slot img,
+.mc-slot-dark img,
+.craft-slot img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: none;
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+
+/* Selection */
+::selection {
+  background: rgba(255, 170, 0, 0.3);
+  color: #FFAA00;
+}
+
+/* Component Styles */
+@layer components {
+  .mc-panel {
+    @apply bg-[#c6c6c6] relative;
+    box-shadow:
+      inset -4px -4px 0 0 #555555,
+      inset 4px 4px 0 0 #ffffff;
+  }
+
+  .mc-panel-dark {
+    @apply bg-[#1a1a1a] relative border border-[#2d2d2d] rounded-lg;
+  }
+
+  .mc-slot {
+    @apply relative flex items-center justify-center;
+    width: var(--mc-slot-size);
+    height: var(--mc-slot-size);
+    background: #8b8b8b;
+    box-shadow:
+      inset 2px 2px 0 0 #373737,
+      inset -2px -2px 0 0 #ffffff;
+  }
+
+  .mc-slot-dark {
+    @apply relative flex items-center justify-center;
+    width: var(--mc-slot-size);
+    height: var(--mc-slot-size);
+    background: #2d2d2d;
+    box-shadow:
+      inset 2px 2px 0 0 #1a1a1a,
+      inset -2px -2px 0 0 #404040;
+  }
+
+  .mc-slot-hover:hover {
+    box-shadow:
+      inset 2px 2px 0 0 #373737,
+      inset -2px -2px 0 0 #ffffff,
+      inset 0 0 0 1px rgba(255, 170, 0, 0.8);
+    cursor: pointer;
+  }
+
+  .mc-slot-dark-hover:hover {
+    box-shadow:
+      inset 2px 2px 0 0 #1a1a1a,
+      inset -2px -2px 0 0 #404040,
+      inset 0 0 0 1px rgba(255, 170, 0, 0.8);
+    cursor: pointer;
+  }
+
+  .mc-btn {
+    @apply px-4 py-2 text-white text-sm font-medium rounded transition-all;
+    background: linear-gradient(180deg, #404040 0%, #2d2d2d 100%);
+    border: 1px solid #555555;
+  }
+
+  .mc-btn:hover {
+    background: linear-gradient(180deg, #4a4a4a 0%, #373737 100%);
+    border-color: #666666;
+  }
+
+  .mc-btn:active {
+    transform: translateY(1px);
+  }
+
+  .mc-btn-primary {
+    background: linear-gradient(180deg, #2d7a27 0%, #1a5a17 100%);
+    border: 1px solid #3d9a37;
+  }
+
+  .mc-btn-primary:hover {
+    background: linear-gradient(180deg, #3d8a37 0%, #2d6a27 100%);
+    border-color: #4daa47;
+  }
+
+  .mc-input {
+    @apply w-full px-3 py-2 text-white text-sm bg-[#0f0f0f] border border-[#333333] rounded outline-none transition-colors;
+  }
+
+  .mc-input:focus {
+    border-color: #FFAA00;
+    box-shadow: 0 0 0 2px rgba(255, 170, 0, 0.2);
+  }
+
+  .mc-input::placeholder {
+    color: #666666;
+  }
+
+  .mc-select {
+    @apply mc-input cursor-pointer appearance-none pr-8;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888888' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  /* Minecraft tooltip styling (for preview) */
+  .mc-tooltip {
+    @apply p-3 mc-font;
+    background: #100010;
+    border: 2px solid #28007d;
+    box-shadow:
+      inset 0 0 0 1px #28007d,
+      0 0 0 1px #100010;
+  }
+
+  /* Minecraft text shadow effect (for preview) */
+  .mc-text-shadow {
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Rarity color utilities */
+.text-rarity-common { color: #FFFFFF; }
+.text-rarity-uncommon { color: #55FF55; }
+.text-rarity-rare { color: #5555FF; }
+.text-rarity-epic { color: #AA00AA; }
+.text-rarity-legendary { color: #FFAA00; }
+.text-rarity-mythic { color: #FF55FF; }
+.text-rarity-divine { color: #55FFFF; }
+.text-rarity-special { color: #FF5555; }
+.text-rarity-very-special { color: #AA0000; }
+
+/* Minecraft text color classes (for preview) */
+.mc-0 { color: #000000; }
+.mc-1 { color: #0000AA; }
+.mc-2 { color: #00AA00; }
+.mc-3 { color: #00AAAA; }
+.mc-4 { color: #AA0000; }
+.mc-5 { color: #AA00AA; }
+.mc-6 { color: #FFAA00; }
+.mc-7 { color: #AAAAAA; }
+.mc-8 { color: #555555; }
+.mc-9 { color: #5555FF; }
+.mc-a { color: #55FF55; }
+.mc-b { color: #55FFFF; }
+.mc-c { color: #FF5555; }
+.mc-d { color: #FF55FF; }
+.mc-e { color: #FFFF55; }
+.mc-f { color: #FFFFFF; }
+
+/* Formatting */
+.mc-l { font-weight: bold; }
+.mc-o { font-style: italic; }
+.mc-n { text-decoration: underline; }
+.mc-m { text-decoration: line-through; }
+
+/* Stained glass pane styling */
+.stained-pane {
+  background: linear-gradient(135deg, rgba(128, 128, 128, 0.8) 0%, rgba(80, 80, 80, 0.9) 100%);
+  border: 1px solid rgba(60, 60, 60, 0.8);
+}
+
+/* Crafting arrow */
+.craft-arrow {
+  width: 22px;
+  height: 15px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='15' viewBox='0 0 22 15'%3E%3Cpath fill='%238b8b8b' d='M0 6h16v3H0zM16 0l6 7.5-6 7.5V0z'/%3E%3Cpath fill='%23c6c6c6' d='M0 6h16v1H0z'/%3E%3Cpath fill='%23373737' d='M0 8h16v1H0z'/%3E%3C/svg%3E") no-repeat center;
+}
+
+/* Button icon alignment - for emoji icons */
+.icon {
+  display: inline-block;
+  transform: translateY(-2px);
+  line-height: 1;
+}
+
+/* Force emoji rendering for actual emojis */
+.icon-emoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+
+/* Gemstone slot - inline text symbols aligned with brackets */
+.gemstone-slot {
+  display: inline;
+  line-height: 1;
+}
+
+.gemstone-slot .gem-symbol {
+  display: inline;
+}
+
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

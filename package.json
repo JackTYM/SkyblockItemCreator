@@ -1,0 +1,23 @@
+{
+  "name": "skyblock-item-creator",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "html-to-image": "^1.11.13",
+    "nuxt": "^4.4.2",
+    "vue": "^3.5.32",
+    "vue-router": "^5.0.4"
+  },
+  "devDependencies": {
+    "@nuxtjs/google-fonts": "^3.2.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "html2canvas": "^1.4.1"
+  }
+}
