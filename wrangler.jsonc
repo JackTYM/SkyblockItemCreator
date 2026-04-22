@@ -1,5 +1,5 @@
 {
-  "name": "<WORKER_NAME>",
-  "compatibility_date": "<COMPATIBILITY_DATE>",
+  "name": "skyblock-item-creator",
+  "compatibility_date": "2024-11-01",
   "pages_build_output_dir": "./dist"
 }
