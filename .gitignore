@@ -25,3 +25,6 @@ logs
 
 # Claude Code local settings
 .claude/
+
+# Lock file (let Cloudflare generate its own)
+package-lock.json
