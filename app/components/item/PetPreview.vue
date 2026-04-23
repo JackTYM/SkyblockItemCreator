@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RARITIES, SKYBLOCK_STATS, type ItemAbility, type PetHeldItem, type CustomStat } from '~/types'
+import { RARITIES, SKYBLOCK_STATS, ABILITY_BONUS_TYPES, type ItemAbility, type PetHeldItem, type CustomStat } from '~/types'
 import MinecraftText from './MinecraftText.vue'
 
 interface Props {
@@ -156,6 +156,29 @@ const formattedXp = computed(() => {
   return props.xp.toLocaleString()
 })
 
+// Format ability header based on bonus type
+function getAbilityHeader(ability: ItemAbility): string {
+  const bonusType = ability.bonusType || 'item'
+  const bonusInfo = ABILITY_BONUS_TYPES.find(b => b.value === bonusType)
+
+  if (!bonusInfo) {
+    return `§6${ability.name}`
+  }
+
+  // For pets, abilities don't have the "Item Ability:" prefix, just the name
+  if (bonusType === 'item') {
+    return `§6${ability.name}`
+  }
+
+  // Tiered bonus is dark gray
+  if (bonusType === 'tiered') {
+    return `§8Tiered Bonus: ${ability.name}`
+  }
+
+  // Full Set Bonus and Piece Bonus are gold
+  return `§6${bonusInfo.label}: ${ability.name}`
+}
+
 defineExpose({
   previewRef,
   tooltipRef,
@@ -223,7 +246,7 @@ defineExpose({
             <template v-if="abilities && abilities.length > 0">
               <template v-for="(ability, aIndex) in abilities" :key="'ability-' + aIndex">
                 <MinecraftText
-                  :text="`§6${ability.name}`"
+                  :text="getAbilityHeader(ability)"
                   class="text-xs block"
                 />
                 <MinecraftText

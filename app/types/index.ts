@@ -261,9 +261,19 @@ export interface GemstoneSlot {
 }
 
 // Item abilities
+export type AbilityBonusType = 'item' | 'full_set' | 'piece' | 'tiered'
+
+export const ABILITY_BONUS_TYPES: { value: AbilityBonusType; label: string; color: string; code: string }[] = [
+  { value: 'item', label: 'Item Ability', color: '#FFAA00', code: '6' },
+  { value: 'full_set', label: 'Full Set Bonus', color: '#FFAA00', code: '6' },
+  { value: 'piece', label: 'Piece Bonus', color: '#FFAA00', code: '6' },
+  { value: 'tiered', label: 'Tiered Bonus', color: '#555555', code: '8' },
+]
+
 export interface ItemAbility {
   name: string
   description: string // Can contain newlines and formatting codes
+  bonusType?: AbilityBonusType // Type of bonus (defaults to 'item' for backwards compatibility)
 }
 
 // Pet types

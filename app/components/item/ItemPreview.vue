@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RARITIES, SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, type GemstoneSlot, type ItemAbility, type CustomStat } from '~/types'
+import { RARITIES, SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, ABILITY_BONUS_TYPES, type GemstoneSlot, type ItemAbility, type CustomStat } from '~/types'
 import MinecraftText from './MinecraftText.vue'
 import type { Rarity } from '~/types'
 
@@ -212,6 +212,24 @@ const rarityLine = computed(() => {
   return `§${selectedRarity.value.code}§l${selectedRarity.value.displayName} ${dungeonPrefix}${props.itemType ? `${props.itemType.toUpperCase()}` : ''}`.trim()
 })
 
+// Format ability header based on bonus type
+function getAbilityHeader(ability: ItemAbility): string {
+  const bonusType = ability.bonusType || 'item'
+  const bonusInfo = ABILITY_BONUS_TYPES.find(b => b.value === bonusType)
+
+  if (!bonusInfo) {
+    return `§6Item Ability: ${ability.name}`
+  }
+
+  // Tiered bonus is dark gray
+  if (bonusType === 'tiered') {
+    return `§8Tiered Bonus: ${ability.name}`
+  }
+
+  // Everything else (Item Ability, Full Set Bonus, Piece Bonus) is gold
+  return `§6${bonusInfo.label}: ${ability.name}`
+}
+
 defineExpose({
   previewRef,
   tooltipRef,
@@ -305,7 +323,7 @@ defineExpose({
             <template v-if="isSkyblock && abilities && abilities.length > 0">
               <template v-for="(ability, aIndex) in abilities" :key="'ability-' + aIndex">
                 <MinecraftText
-                  :text="`§6Item Ability: ${ability.name}`"
+                  :text="getAbilityHeader(ability)"
                   class="text-xs block"
                 />
                 <MinecraftText

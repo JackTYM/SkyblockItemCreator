@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, MINECRAFT_COLORS, MINECRAFT_COLOR_NAMES, SKYBLOCK_SYMBOLS, type GemstoneSlot, type ItemAbility, type CustomStat } from '~/types'
+import { SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, MINECRAFT_COLORS, MINECRAFT_COLOR_NAMES, SKYBLOCK_SYMBOLS, ABILITY_BONUS_TYPES, type GemstoneSlot, type ItemAbility, type CustomStat, type AbilityBonusType } from '~/types'
 
 interface Props {
   modelValue: Record<string, number>
@@ -184,7 +184,7 @@ const showSymbolPicker = ref(false)
 const activeAbilityIndex = ref<number | null>(null)
 
 function addAbility() {
-  localAbilities.value.push({ name: 'Ability Name', description: 'Ability description' })
+  localAbilities.value.push({ name: 'Ability Name', description: 'Ability description', bonusType: 'item' })
   emit('update:abilities', [...localAbilities.value])
 }
 
@@ -200,6 +200,11 @@ function updateAbilityName(index: number, name: string) {
 
 function updateAbilityDescription(index: number, description: string) {
   localAbilities.value[index].description = description
+  emit('update:abilities', [...localAbilities.value])
+}
+
+function updateAbilityBonusType(index: number, bonusType: AbilityBonusType) {
+  localAbilities.value[index].bonusType = bonusType
   emit('update:abilities', [...localAbilities.value])
 }
 
@@ -518,6 +523,25 @@ function updateCustomStat(index: number, field: keyof CustomStat, value: string 
             :key="index"
             class="p-3 bg-black/30 rounded space-y-2"
           >
+            <!-- Bonus Type Selector -->
+            <div class="flex items-center gap-2 mb-2">
+              <label class="text-[10px] text-[#666]">Type:</label>
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="bonusType in ABILITY_BONUS_TYPES"
+                  :key="bonusType.value"
+                  class="px-2 py-1 text-[10px] rounded transition-colors"
+                  :class="(ability.bonusType || 'item') === bonusType.value
+                    ? 'bg-[#3d3d3d] ring-1 ring-white/30'
+                    : 'bg-[#1a1a1a] hover:bg-[#2a2a2a]'"
+                  :style="{ color: bonusType.color }"
+                  @click="updateAbilityBonusType(index, bonusType.value)"
+                >
+                  {{ bonusType.label }}
+                </button>
+              </div>
+            </div>
+
             <div class="flex items-center gap-2">
               <!-- Ability name -->
               <input
