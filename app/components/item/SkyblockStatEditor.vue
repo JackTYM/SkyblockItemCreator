@@ -236,7 +236,7 @@ function handleSymbolSelect(symbol: string) {
 
 // Custom stat functions
 function addCustomStat() {
-  localCustomStats.value.push({ name: 'Custom Stat', symbol: '✦', color: '#FFFFFF', value: 0 })
+  localCustomStats.value.push({ name: 'Custom Stat', color: '#FFFFFF', value: 0 })
   emit('update:customStats', [...localCustomStats.value])
 }
 
@@ -250,20 +250,6 @@ function updateCustomStat(index: number, field: keyof CustomStat, value: string 
   emit('update:customStats', [...localCustomStats.value])
 }
 
-const showCustomStatSymbolPicker = ref(false)
-const activeCustomStatIndex = ref<number | null>(null)
-
-function openCustomStatSymbolPicker(index: number) {
-  activeCustomStatIndex.value = index
-  showCustomStatSymbolPicker.value = true
-}
-
-function handleCustomStatSymbolSelect(symbol: string) {
-  if (activeCustomStatIndex.value !== null) {
-    updateCustomStat(activeCustomStatIndex.value, 'symbol', symbol)
-  }
-  showCustomStatSymbolPicker.value = false
-}
 </script>
 
 <template>
@@ -362,25 +348,6 @@ function handleCustomStatSymbolSelect(symbol: string) {
                 class="p-2 bg-black/30 rounded space-y-2"
               >
                 <div class="flex items-center gap-2">
-                  <!-- Symbol input with picker button -->
-                  <div class="flex items-center gap-1">
-                    <input
-                      type="text"
-                      :value="customStat.symbol"
-                      class="mc-input text-center text-lg py-1 w-10"
-                      :style="{ color: customStat.color }"
-                      maxlength="2"
-                      @input="updateCustomStat(index, 'symbol', ($event.target as HTMLInputElement).value)"
-                    >
-                    <button
-                      class="w-6 h-6 flex items-center justify-center text-xs bg-[#2d2d2d] hover:bg-[#3d3d3d] rounded text-[#888]"
-                      title="Pick symbol"
-                      @click="openCustomStatSymbolPicker(index)"
-                    >
-                      ...
-                    </button>
-                  </div>
-
                   <!-- Name -->
                   <input
                     type="text"
@@ -432,34 +399,6 @@ function handleCustomStatSymbolSelect(symbol: string) {
             </button>
           </div>
 
-          <!-- Custom Stat Symbol Picker Modal -->
-          <Teleport to="body">
-            <div
-              v-if="showCustomStatSymbolPicker"
-              class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-              @click.self="showCustomStatSymbolPicker = false"
-            >
-              <div class="bg-[#1a1a1a] border-2 border-[#444] rounded-lg p-4 max-w-md">
-                <h3 class="text-sm text-[#FFAA00] mb-3">Select Symbol</h3>
-                <div class="grid grid-cols-10 gap-1">
-                  <button
-                    v-for="symbol in SKYBLOCK_SYMBOLS"
-                    :key="symbol"
-                    class="w-8 h-8 flex items-center justify-center text-lg hover:bg-[#333] rounded transition-colors"
-                    @click="handleCustomStatSymbolSelect(symbol)"
-                  >
-                    {{ symbol }}
-                  </button>
-                </div>
-                <button
-                  class="mt-3 w-full py-2 text-xs text-[#888] hover:text-white bg-[#2d2d2d] hover:bg-[#353535] rounded"
-                  @click="showCustomStatSymbolPicker = false"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </Teleport>
         </template>
       </div>
     </template>

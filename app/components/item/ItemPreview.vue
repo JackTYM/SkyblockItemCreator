@@ -193,7 +193,7 @@ const formattedStats = computed(() => {
       if (customStat.value === 0) continue
       const prefix = customStat.value > 0 ? '+' : ''
       const colorCode = hexToColorCode(customStat.color)
-      lines.push(`§7${customStat.symbol} ${customStat.name}: §${colorCode}${prefix}${customStat.value}`)
+      lines.push(`§7${customStat.name}: §${colorCode}${prefix}${customStat.value}`)
     }
   }
 
