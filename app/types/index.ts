@@ -286,6 +286,14 @@ export interface PetHeldItem {
   perk: string // Description of what the item does
 }
 
+// Custom stat for user-defined stats
+export interface CustomStat {
+  name: string
+  symbol: string
+  color: string
+  value: number
+}
+
 // Pet data
 export interface PetData {
   level: number

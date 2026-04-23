@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TextureItem, GemstoneSlot, ItemAbility, PetHeldItem } from '~/types'
+import type { TextureItem, GemstoneSlot, ItemAbility, PetHeldItem, CustomStat } from '~/types'
 import { RARITIES, MINECRAFT_COLORS, PET_TYPES } from '~/types'
 import RaritySelector from './RaritySelector.vue'
 import SkyblockStatEditor from './SkyblockStatEditor.vue'
@@ -33,6 +33,7 @@ const rawLore = ref('A powerful weapon\nforged in the depths')
 const stats = ref<Record<string, number>>({})
 const gemstoneSlots = ref<GemstoneSlot[]>([])
 const abilities = ref<ItemAbility[]>([])
+const customStats = ref<CustomStat[]>([])
 const selectedTexture = ref<string>('')
 const textureSource = ref<'vanilla' | 'heads' | 'custom'>('vanilla')
 const isDungeonized = ref(false)
@@ -596,7 +597,7 @@ async function handleShare() {
 
             <!-- Stats Editor (without gemstones for pets) -->
             <div class="border-t border-[#373737] pt-4">
-              <SkyblockStatEditor v-model="stats" v-model:abilities="abilities" :hide-gemstones="true" />
+              <SkyblockStatEditor v-model="stats" v-model:abilities="abilities" v-model:custom-stats="customStats" :hide-gemstones="true" />
             </div>
           </template>
 
@@ -618,7 +619,7 @@ async function handleShare() {
 
             <!-- Stats Editor -->
             <div class="border-t border-[#373737] pt-4">
-              <SkyblockStatEditor v-model="stats" v-model:gemstone-slots="gemstoneSlots" v-model:abilities="abilities" />
+              <SkyblockStatEditor v-model="stats" v-model:gemstone-slots="gemstoneSlots" v-model:abilities="abilities" v-model:custom-stats="customStats" />
             </div>
           </template>
         </template>
@@ -710,6 +711,7 @@ async function handleShare() {
           :xp="petXp"
           :stats="stats"
           :abilities="abilities"
+          :custom-stats="customStats"
           :held-item="petHeldItem"
           :texture="selectedTexture"
           :lore="loreLines"
@@ -728,6 +730,7 @@ async function handleShare() {
           :stats="stats"
           :gemstone-slots="gemstoneSlots"
           :abilities="abilities"
+          :custom-stats="customStats"
           :texture="selectedTexture"
           :is-skyblock="isSkyblock"
           :is-dungeonized="isDungeonized"

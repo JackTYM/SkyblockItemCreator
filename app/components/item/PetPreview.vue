@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RARITIES, SKYBLOCK_STATS, type ItemAbility, type PetHeldItem } from '~/types'
+import { RARITIES, SKYBLOCK_STATS, type ItemAbility, type PetHeldItem, type CustomStat } from '~/types'
 import MinecraftText from './MinecraftText.vue'
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
   xp: number
   stats: Record<string, number>
   abilities?: ItemAbility[]
+  customStats?: CustomStat[]
   heldItem?: PetHeldItem
   texture?: string
   lore?: string[]
@@ -135,6 +136,16 @@ const formattedStats = computed(() => {
     const suffix = percentStats.includes(stat.stat) ? '%' : ''
     const colorCode = getColorCode(stat.color)
     lines.push(`§7${stat.name}: §${colorCode}${prefix}${value}${suffix}`)
+  }
+
+  // Add custom stats
+  if (props.customStats) {
+    for (const customStat of props.customStats) {
+      if (customStat.value === 0) continue
+      const prefix = customStat.value > 0 ? '+' : ''
+      const colorCode = findClosestColorCode(customStat.color)
+      lines.push(`§7${customStat.symbol} ${customStat.name}: §${colorCode}${prefix}${customStat.value}`)
+    }
   }
 
   return lines

@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, MINECRAFT_COLORS, MINECRAFT_COLOR_NAMES, SKYBLOCK_SYMBOLS, type GemstoneSlot, type ItemAbility } from '~/types'
+import { SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, MINECRAFT_COLORS, MINECRAFT_COLOR_NAMES, SKYBLOCK_SYMBOLS, type GemstoneSlot, type ItemAbility, type CustomStat } from '~/types'
 
 interface Props {
   modelValue: Record<string, number>
   gemstoneSlots?: GemstoneSlot[]
   abilities?: ItemAbility[]
+  customStats?: CustomStat[]
   hideGemstones?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   gemstoneSlots: () => [],
   abilities: () => [],
+  customStats: () => [],
   hideGemstones: false,
 })
 
@@ -18,6 +20,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: Record<string, number>]
   'update:gemstoneSlots': [value: GemstoneSlot[]]
   'update:abilities': [value: ItemAbility[]]
+  'update:customStats': [value: CustomStat[]]
 }>()
 
 // Local gemstone slots state
@@ -32,6 +35,13 @@ const localAbilities = ref<ItemAbility[]>([...props.abilities])
 
 watch(() => props.abilities, (newVal) => {
   localAbilities.value = [...newVal]
+}, { deep: true })
+
+// Local custom stats state
+const localCustomStats = ref<CustomStat[]>([...props.customStats])
+
+watch(() => props.customStats, (newVal) => {
+  localCustomStats.value = [...newVal]
 }, { deep: true })
 
 // Define stat categories with their stat keys
@@ -223,6 +233,37 @@ function handleSymbolSelect(symbol: string) {
   }
   showSymbolPicker.value = false
 }
+
+// Custom stat functions
+function addCustomStat() {
+  localCustomStats.value.push({ name: 'Custom Stat', symbol: '✦', color: '#FFFFFF', value: 0 })
+  emit('update:customStats', [...localCustomStats.value])
+}
+
+function removeCustomStat(index: number) {
+  localCustomStats.value.splice(index, 1)
+  emit('update:customStats', [...localCustomStats.value])
+}
+
+function updateCustomStat(index: number, field: keyof CustomStat, value: string | number) {
+  (localCustomStats.value[index] as any)[field] = value
+  emit('update:customStats', [...localCustomStats.value])
+}
+
+const showCustomStatSymbolPicker = ref(false)
+const activeCustomStatIndex = ref<number | null>(null)
+
+function openCustomStatSymbolPicker(index: number) {
+  activeCustomStatIndex.value = index
+  showCustomStatSymbolPicker.value = true
+}
+
+function handleCustomStatSymbolSelect(symbol: string) {
+  if (activeCustomStatIndex.value !== null) {
+    updateCustomStat(activeCustomStatIndex.value, 'symbol', symbol)
+  }
+  showCustomStatSymbolPicker.value = false
+}
 </script>
 
 <template>
@@ -308,6 +349,118 @@ function handleSymbolSelect(symbol: string) {
             </div>
           </div>
         </div>
+
+        <!-- Custom Stats Section (only in Other category) -->
+        <template v-if="activeStatCategory === 'other'">
+          <div class="mt-4 pt-4 border-t border-[#333]">
+            <p class="text-xs text-[#888] mb-3">Custom Stats</p>
+
+            <div class="space-y-2">
+              <div
+                v-for="(customStat, index) in localCustomStats"
+                :key="index"
+                class="p-2 bg-black/30 rounded space-y-2"
+              >
+                <div class="flex items-center gap-2">
+                  <!-- Symbol input with picker button -->
+                  <div class="flex items-center gap-1">
+                    <input
+                      type="text"
+                      :value="customStat.symbol"
+                      class="mc-input text-center text-lg py-1 w-10"
+                      :style="{ color: customStat.color }"
+                      maxlength="2"
+                      @input="updateCustomStat(index, 'symbol', ($event.target as HTMLInputElement).value)"
+                    >
+                    <button
+                      class="w-6 h-6 flex items-center justify-center text-xs bg-[#2d2d2d] hover:bg-[#3d3d3d] rounded text-[#888]"
+                      title="Pick symbol"
+                      @click="openCustomStatSymbolPicker(index)"
+                    >
+                      ...
+                    </button>
+                  </div>
+
+                  <!-- Name -->
+                  <input
+                    type="text"
+                    :value="customStat.name"
+                    class="mc-input text-xs py-1 flex-1"
+                    placeholder="Stat Name"
+                    @input="updateCustomStat(index, 'name', ($event.target as HTMLInputElement).value)"
+                  >
+
+                  <!-- Value -->
+                  <input
+                    type="number"
+                    step="any"
+                    :value="customStat.value"
+                    class="mc-input text-xs py-1 w-20"
+                    placeholder="Value"
+                    @input="updateCustomStat(index, 'value', parseFloat(($event.target as HTMLInputElement).value) || 0)"
+                  >
+
+                  <!-- Remove button -->
+                  <button
+                    class="w-6 h-6 flex items-center justify-center text-[#FF5555] hover:text-[#FF7777] bg-[#2d2d2d] rounded"
+                    @click="removeCustomStat(index)"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <!-- Minecraft color selector -->
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    v-for="(color, code) in MINECRAFT_COLORS"
+                    :key="code"
+                    class="w-5 h-5 rounded transition-transform hover:scale-110"
+                    :class="customStat.color === color ? 'ring-2 ring-white ring-offset-1 ring-offset-black' : ''"
+                    :style="{ backgroundColor: color }"
+                    :title="MINECRAFT_COLOR_NAMES[code]"
+                    @click="updateCustomStat(index, 'color', color)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="w-full mt-2 py-2 text-xs text-[#55FF55] hover:text-[#77FF77] bg-[#2d2d2d] hover:bg-[#353535] rounded transition-colors"
+              @click="addCustomStat"
+            >
+              + Add Custom Stat
+            </button>
+          </div>
+
+          <!-- Custom Stat Symbol Picker Modal -->
+          <Teleport to="body">
+            <div
+              v-if="showCustomStatSymbolPicker"
+              class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+              @click.self="showCustomStatSymbolPicker = false"
+            >
+              <div class="bg-[#1a1a1a] border-2 border-[#444] rounded-lg p-4 max-w-md">
+                <h3 class="text-sm text-[#FFAA00] mb-3">Select Symbol</h3>
+                <div class="grid grid-cols-10 gap-1">
+                  <button
+                    v-for="symbol in SKYBLOCK_SYMBOLS"
+                    :key="symbol"
+                    class="w-8 h-8 flex items-center justify-center text-lg hover:bg-[#333] rounded transition-colors"
+                    @click="handleCustomStatSymbolSelect(symbol)"
+                  >
+                    {{ symbol }}
+                  </button>
+                </div>
+                <button
+                  class="mt-3 w-full py-2 text-xs text-[#888] hover:text-white bg-[#2d2d2d] hover:bg-[#353535] rounded"
+                  @click="showCustomStatSymbolPicker = false"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </Teleport>
+        </template>
       </div>
     </template>
 

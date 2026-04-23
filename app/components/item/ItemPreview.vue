@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RARITIES, SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, type GemstoneSlot, type ItemAbility } from '~/types'
+import { RARITIES, SKYBLOCK_STATS, GEMSTONE_TYPES, GEMSTONE_RARITIES, type GemstoneSlot, type ItemAbility, type CustomStat } from '~/types'
 import MinecraftText from './MinecraftText.vue'
 import type { Rarity } from '~/types'
 
@@ -14,6 +14,7 @@ interface Props {
   stats: Record<string, number>
   gemstoneSlots?: GemstoneSlot[]
   abilities?: ItemAbility[]
+  customStats?: CustomStat[]
   texture?: string
   isSkyblock: boolean
   isDungeonized?: boolean
@@ -134,6 +135,41 @@ const gemstoneSlotData = computed(() => {
   }).filter(Boolean) as { symbol: string; color: string }[]
 })
 
+// Find closest Minecraft color code for a hex color
+function hexToColorCode(hexColor: string): string {
+  const mcColors: Record<string, string> = {
+    '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+    '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+    '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+    'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
+  }
+
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+
+  let closestCode = 'f'
+  let closestDistance = Infinity
+
+  for (const [code, mcHex] of Object.entries(mcColors)) {
+    const mcR = parseInt(mcHex.substring(1, 3), 16)
+    const mcG = parseInt(mcHex.substring(3, 5), 16)
+    const mcB = parseInt(mcHex.substring(5, 7), 16)
+
+    const distance = Math.sqrt(
+      Math.pow(r - mcR, 2) + Math.pow(g - mcG, 2) + Math.pow(b - mcB, 2)
+    )
+
+    if (distance < closestDistance) {
+      closestDistance = distance
+      closestCode = code
+    }
+  }
+
+  return closestCode
+}
+
 // Format stats for display (ordered by SKYBLOCK_STATS)
 const formattedStats = computed(() => {
   const lines: string[] = []
@@ -149,6 +185,16 @@ const formattedStats = computed(() => {
     const colorCode = getColorCode(stat.color)
     // Skyblock format: "Damage: +100" with stat-specific color
     lines.push(`§7${stat.name}: §${colorCode}${prefix}${value}${suffix}`)
+  }
+
+  // Add custom stats
+  if (props.customStats) {
+    for (const customStat of props.customStats) {
+      if (customStat.value === 0) continue
+      const prefix = customStat.value > 0 ? '+' : ''
+      const colorCode = hexToColorCode(customStat.color)
+      lines.push(`§7${customStat.symbol} ${customStat.name}: §${colorCode}${prefix}${customStat.value}`)
+    }
   }
 
   return lines
