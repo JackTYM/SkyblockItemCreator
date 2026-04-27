@@ -1,10 +1,14 @@
 import type { TextureItem, TextureSource } from '~/types'
 
-// CDN URLs for textures
-const MC_ASSETS_BASE = 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures'
+// CDN URLs for textures (mcasset.cloud auto-updates to latest Minecraft version)
+const MC_ASSETS_CDN = 'https://assets.mcasset.cloud/latest'
+const MC_ASSETS_BASE = `${MC_ASSETS_CDN}/assets/minecraft/textures`
 const MC_HEADS_CDN = 'https://mc-heads.net'
-const GITHUB_API_ITEMS = 'https://api.github.com/repos/InventivetalentDev/minecraft-assets/contents/assets/minecraft/textures/item?ref=1.21'
-const GITHUB_API_BLOCKS = 'https://api.github.com/repos/InventivetalentDev/minecraft-assets/contents/assets/minecraft/textures/block?ref=1.21'
+// CORS proxy for fetching mcasset.cloud HTML (to extract latest version)
+const CORS_PROXY = 'https://corsproxy.io/?url='
+const MC_ASSETS_PAGE = 'https://mcasset.cloud/latest'
+// GitHub API for file listing (has CORS support)
+const GITHUB_API_BASE = 'https://api.github.com/repos/InventivetalentDev/minecraft-assets/contents/assets/minecraft/textures'
 
 // Cache for fetched items
 let cachedItems: TextureItem[] | null = null
@@ -143,46 +147,65 @@ export function useTextures() {
   const error = ref<string | null>(null)
   const items = ref<TextureItem[]>([])
 
-  // Fetch all items and blocks from GitHub API
+  // Fetch latest Minecraft version from mcasset.cloud via CORS proxy
+  async function fetchLatestVersion(): Promise<string> {
+    try {
+      const response = await fetch(`${CORS_PROXY}${encodeURIComponent(MC_ASSETS_PAGE)}`)
+      if (!response.ok) throw new Error('Failed to fetch mcasset.cloud')
+
+      const html = await response.text()
+      // Look for version pattern like "26.1.2.json" in the HTML
+      const match = html.match(/"(\d+\.\d+(?:\.\d+)?)\.json"/)
+      if (match) return match[1]
+
+      throw new Error('Could not parse version from mcasset.cloud')
+    }
+    catch (err) {
+      console.error('Failed to fetch latest version, falling back to 1.21:', err)
+      return '1.21'
+    }
+  }
+
+  // Fetch all items and blocks from GitHub API using latest version
   async function fetchItems(): Promise<TextureItem[]> {
     if (cachedItems) return cachedItems
 
     if (fetchPromise) return fetchPromise
 
-    fetchPromise = Promise.all([
-      fetch(GITHUB_API_ITEMS).then(res => res.ok ? res.json() : []),
-      fetch(GITHUB_API_BLOCKS).then(res => res.ok ? res.json() : []),
-    ])
-      .then(([itemFiles, blockFiles]: [{ name: string }[], { name: string }[]]) => {
-        const processFiles = (files: { name: string }[], type: 'item' | 'block') => {
-          return files
-            .filter(f => f.name.endsWith('.png'))
-            .filter(f => !EXCLUDED_PATTERNS.some(p => f.name.includes(p)))
-            .map(f => {
-              const id = f.name.replace('.png', '')
-              return {
-                id,
-                name: filenameToDisplayName(f.name),
-                texture: `${MC_ASSETS_BASE}/${type}/${f.name}`,
-                source: 'vanilla' as TextureSource,
-                category: type === 'block' ? 'blocks' : categorizeItem(id),
-              }
-            })
-        }
+    fetchPromise = (async () => {
+      const version = await fetchLatestVersion()
+      const [itemsRes, blocksRes] = await Promise.all([
+        fetch(`${GITHUB_API_BASE}/item?ref=${version}`).then(res => res.ok ? res.json() : []),
+        fetch(`${GITHUB_API_BASE}/block?ref=${version}`).then(res => res.ok ? res.json() : []),
+      ])
 
-        const items = processFiles(itemFiles, 'item')
-        const blocks = processFiles(blockFiles, 'block')
+      const processFiles = (files: { name: string }[], type: 'item' | 'block') => {
+        return files
+          .filter(f => f.name.endsWith('.png'))
+          .filter(f => !EXCLUDED_PATTERNS.some(p => f.name.includes(p)))
+          .map(f => {
+            const id = f.name.replace('.png', '')
+            return {
+              id,
+              name: filenameToDisplayName(f.name),
+              texture: `${MC_ASSETS_BASE}/${type}/${f.name}`,
+              source: 'vanilla' as TextureSource,
+              category: type === 'block' ? 'blocks' : categorizeItem(id),
+            }
+          })
+      }
 
-        const textureItems = [...items, ...blocks].sort((a, b) => a.name.localeCompare(b.name))
+      const items = processFiles(itemsRes, 'item')
+      const blocks = processFiles(blocksRes, 'block')
 
-        cachedItems = textureItems
-        return textureItems
-      })
-      .catch(err => {
-        console.error('Failed to fetch Minecraft items:', err)
-        cachedItems = []
-        return []
-      })
+      const textureItems = [...items, ...blocks].sort((a, b) => a.name.localeCompare(b.name))
+      cachedItems = textureItems
+      return textureItems
+    })().catch(err => {
+      console.error('Failed to fetch Minecraft items:', err)
+      cachedItems = []
+      return []
+    })
 
     return fetchPromise
   }
@@ -209,13 +232,13 @@ export function useTextures() {
   function getTextureUrl(id: string, source: TextureSource): string {
     switch (source) {
       case 'vanilla':
-        return `${MC_ASSETS_CDN}/${id}.png`
+        return `${MC_ASSETS_BASE}/item/${id}.png`
       case 'heads':
         return `${MC_HEADS_CDN}/head/${id}/64`
       case 'custom':
         return id // Custom URLs are passed directly
       default:
-        return `${MC_ASSETS_CDN}/${id}.png`
+        return `${MC_ASSETS_BASE}/item/${id}.png`
     }
   }
 
