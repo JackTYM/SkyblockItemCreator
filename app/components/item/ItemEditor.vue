@@ -36,6 +36,7 @@ const abilities = ref<ItemAbility[]>([])
 const customStats = ref<CustomStat[]>([])
 const selectedTexture = ref<string>('')
 const textureSource = ref<'vanilla' | 'heads' | 'custom'>('vanilla')
+const leatherColor = ref<string | undefined>(undefined)
 const isDungeonized = ref(false)
 const enchantGlint = ref(false)
 
@@ -284,6 +285,7 @@ function handleNameInsert(code: string) {
 function handleTextureSelect(item: TextureItem) {
   selectedTexture.value = item.texture
   textureSource.value = item.source as 'vanilla' | 'heads' | 'custom'
+  leatherColor.value = item.leatherColor
 }
 
 // Export functions
@@ -732,6 +734,7 @@ async function handleShare() {
           :abilities="abilities"
           :custom-stats="customStats"
           :texture="selectedTexture"
+          :leather-color="leatherColor"
           :is-skyblock="isSkyblock"
           :is-dungeonized="isDungeonized"
           :enchant-glint="enchantGlint"

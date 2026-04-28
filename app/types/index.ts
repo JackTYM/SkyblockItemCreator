@@ -196,6 +196,7 @@ export interface CraftingSlot {
   name: string | null
   count: number
   glint?: boolean
+  leatherColor?: string // Hex color for dyed leather armor
 }
 
 export interface CraftingRecipe {
@@ -213,7 +214,18 @@ export interface TextureItem {
   texture: string
   source: TextureSource
   category?: string
+  leatherColor?: string // Hex color for dyeing leather armor
 }
+
+// Leather armor item IDs that can be dyed
+export const LEATHER_ARMOR_IDS = [
+  'leather_helmet',
+  'leather_chestplate',
+  'leather_leggings',
+  'leather_boots',
+] as const
+
+export type LeatherArmorId = typeof LEATHER_ARMOR_IDS[number]
 
 // Gemstone system
 export interface GemstoneType {

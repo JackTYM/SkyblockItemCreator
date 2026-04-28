@@ -16,6 +16,7 @@ interface Props {
   abilities?: ItemAbility[]
   customStats?: CustomStat[]
   texture?: string
+  leatherColor?: string // Hex color for dyed leather armor
   isSkyblock: boolean
   isDungeonized?: boolean
   enchantGlint?: boolean
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
   customRarityName: '',
   customRarityColor: '#FF5555',
   nameColor: 'f', // Default white for vanilla
+  leatherColor: undefined,
   enchantGlint: false,
 })
 

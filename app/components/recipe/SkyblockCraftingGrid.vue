@@ -178,7 +178,10 @@ const gridLayout = computed<GridSlot[][]>(() => {
             >
               <template v-if="modelValue.result.texture">
                 <div class="relative">
-                  <img :src="modelValue.result.texture" class="item-img">
+                  <img
+                    :src="modelValue.result.texture"
+                    class="item-img"
+                  >
                   <div
                     v-if="modelValue.result.glint"
                     class="absolute inset-0 glint-overlay pointer-events-none"

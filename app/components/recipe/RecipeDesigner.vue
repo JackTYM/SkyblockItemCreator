@@ -41,6 +41,7 @@ function handleTextureSelect(item: TextureItem, count: number = 1) {
         texture: item.texture,
         name: item.name,
         count: Math.min(64, Math.max(1, count)),
+        leatherColor: item.leatherColor,
       }
     }
   } else {
@@ -48,6 +49,7 @@ function handleTextureSelect(item: TextureItem, count: number = 1) {
       texture: item.texture,
       name: item.name,
       count: Math.min(64, Math.max(1, count)),
+      leatherColor: item.leatherColor,
     }
   }
 

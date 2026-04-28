@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { TextureItem } from '~/types'
+import type { TextureItem, LeatherArmorId } from '~/types'
+import { LEATHER_ARMOR_IDS } from '~/types'
+import { useLeatherArmor, isLeatherArmor } from '~/composables/useLeatherArmor'
 
 interface Props {
   show: boolean
@@ -14,6 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const { loading, items, initItems, searchVanillaItems, getCategories, getHeadUrl, validateImageUrl } = useTextures()
+const { getDyedTexture, isRendering: isRenderingLeather } = useLeatherArmor()
 
 const searchQuery = ref('')
 const selectedCategory = ref('all')
@@ -28,6 +31,8 @@ const isValidatingUrl = ref(false)
 const urlError = ref('')
 const itemCount = ref(1)
 const pendingItem = ref<TextureItem | null>(null)
+const leatherColor = ref('#A06540') // Default leather brown color
+const leatherPreviewTexture = ref<string | null>(null) // Rendered preview texture
 
 // Proxy external URLs through images.weserv.nl to add CORS headers for PNG export
 function getProxiedUrl(url: string): string {
@@ -77,16 +82,36 @@ const filteredItems = computed(() => {
   return []
 })
 
-function selectItem(item: TextureItem) {
+async function selectItem(item: TextureItem) {
   pendingItem.value = item
   itemCount.value = 1
+  // Reset leather color to default when selecting a new item
+  leatherColor.value = '#A06540'
+  leatherPreviewTexture.value = null
+
+  // If leather armor, render preview with default color
+  if (isLeatherArmor(item.id)) {
+    const texture = await getDyedTexture(item.id, leatherColor.value)
+    leatherPreviewTexture.value = texture
+  }
 }
 
-function confirmSelection() {
+async function confirmSelection() {
   if (pendingItem.value) {
-    emit('select', pendingItem.value, itemCount.value)
+    // For leather armor, generate the final dyed texture
+    const itemToEmit = { ...pendingItem.value }
+    if (isLeatherArmor(pendingItem.value.id)) {
+      const dyedTexture = await getDyedTexture(pendingItem.value.id, leatherColor.value)
+      if (dyedTexture) {
+        itemToEmit.texture = dyedTexture
+      }
+      itemToEmit.leatherColor = leatherColor.value
+    }
+    emit('select', itemToEmit, itemCount.value)
     pendingItem.value = null
     itemCount.value = 1
+    leatherColor.value = '#A06540'
+    leatherPreviewTexture.value = null
     emit('close')
   }
 }
@@ -94,7 +119,16 @@ function confirmSelection() {
 function cancelSelection() {
   pendingItem.value = null
   itemCount.value = 1
+  leatherPreviewTexture.value = null
 }
+
+// Watch leather color changes to update preview
+watch(leatherColor, async (newColor) => {
+  if (pendingItem.value && isLeatherArmor(pendingItem.value.id)) {
+    const texture = await getDyedTexture(pendingItem.value.id, newColor)
+    leatherPreviewTexture.value = texture
+  }
+})
 
 async function searchHead() {
   if (!headUsername.value) return
@@ -468,16 +502,34 @@ const tabs = [
             class="absolute inset-0 bg-black/90 flex items-center justify-center"
           >
             <div class="bg-[#1a1a1a] border border-[#444] rounded-lg p-6 max-w-xs w-full mx-4">
-              <h4 class="text-[#FFAA00] text-sm mb-4 text-center">Set Item Count</h4>
+              <h4 class="text-[#FFAA00] text-sm mb-4 text-center">
+                {{ isLeatherArmor(pendingItem.id) ? 'Customize Leather Armor' : 'Set Item Count' }}
+              </h4>
 
               <div class="flex items-center justify-center gap-4 mb-4">
-                <div class="mc-slot w-16 h-16 flex items-center justify-center">
+                <div class="mc-slot w-16 h-16 flex items-center justify-center relative">
+                  <!-- Use rendered leather texture if available, otherwise original -->
                   <img
+                    v-if="isLeatherArmor(pendingItem.id) && leatherPreviewTexture"
+                    :key="leatherPreviewTexture"
+                    :src="leatherPreviewTexture"
+                    :alt="pendingItem.name"
+                    class="w-12 h-12 object-contain pixelated"
+                  >
+                  <img
+                    v-else
                     :key="pendingItem.texture"
                     :src="pendingItem.texture"
                     :alt="pendingItem.name"
                     class="w-12 h-12 object-contain pixelated"
                   >
+                  <!-- Loading indicator for leather rendering -->
+                  <div
+                    v-if="isLeatherArmor(pendingItem.id) && isRenderingLeather"
+                    class="absolute inset-0 flex items-center justify-center bg-black/50"
+                  >
+                    <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
                 </div>
                 <div>
                   <p class="text-white text-sm">{{ pendingItem.name }}</p>
@@ -502,6 +554,35 @@ const tabs = [
                       +
                     </button>
                   </div>
+                </div>
+              </div>
+
+              <!-- Leather dye color picker -->
+              <div v-if="isLeatherArmor(pendingItem.id)" class="mb-4">
+                <label class="text-xs text-[#AAAAAA] mb-2 block">Dye Color</label>
+                <div class="flex items-center gap-3">
+                  <input
+                    v-model="leatherColor"
+                    type="color"
+                    class="w-10 h-10 rounded cursor-pointer border-2 border-[#444] bg-transparent"
+                  >
+                  <input
+                    v-model="leatherColor"
+                    type="text"
+                    class="flex-1 h-8 bg-[#0f0f0f] border border-[#444] rounded px-2 text-white text-sm font-mono"
+                    placeholder="#A06540"
+                  >
+                </div>
+                <!-- Preset colors -->
+                <div class="flex flex-wrap gap-1 mt-2">
+                  <button
+                    v-for="color in ['#A06540', '#FF5555', '#FFAA00', '#55FF55', '#55FFFF', '#5555FF', '#AA00AA', '#FF55FF', '#FFFFFF', '#1D1D21']"
+                    :key="color"
+                    class="w-6 h-6 rounded border border-[#444] hover:scale-110 transition-transform"
+                    :style="{ backgroundColor: color }"
+                    :title="color"
+                    @click="leatherColor = color"
+                  />
                 </div>
               </div>
 
