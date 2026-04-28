@@ -33,6 +33,7 @@ const itemCount = ref(1)
 const pendingItem = ref<TextureItem | null>(null)
 const leatherColor = ref('#A06540') // Default leather brown color
 const leatherPreviewTexture = ref<string | null>(null) // Rendered preview texture
+const leatherGridTextures = ref<Map<string, string>>(new Map()) // Pre-rendered leather textures for grid display
 
 // Proxy external URLs through images.weserv.nl to add CORS headers for PNG export
 function getProxiedUrl(url: string): string {
@@ -55,10 +56,34 @@ function getProxiedUrl(url: string): string {
   }
 }
 
+// Pre-render leather armor textures with default brown color for grid display
+async function preRenderLeatherArmor() {
+  for (const armorId of LEATHER_ARMOR_IDS) {
+    if (!leatherGridTextures.value.has(armorId)) {
+      const texture = await getDyedTexture(armorId, '#A06540')
+      if (texture) {
+        leatherGridTextures.value.set(armorId, texture)
+      }
+    }
+  }
+}
+
+// Get texture URL for grid display (uses pre-rendered leather textures)
+function getGridTexture(item: TextureItem): string {
+  if (isLeatherArmor(item.id) && leatherGridTextures.value.has(item.id)) {
+    return leatherGridTextures.value.get(item.id)!
+  }
+  return item.texture
+}
+
 // Initialize items when modal is shown, reset state when closed
-watch(() => props.show, (isShown) => {
+watch(() => props.show, async (isShown) => {
   if (isShown && items.value.length === 0) {
     initItems()
+  }
+  if (isShown) {
+    // Pre-render leather armor textures when modal opens
+    await preRenderLeatherArmor()
   }
   if (!isShown) {
     // Reset all input state when modal closes
@@ -306,7 +331,7 @@ const tabs = [
                   @click="selectItem(item)"
                 >
                   <img
-                    :src="item.texture"
+                    :src="getGridTexture(item)"
                     :alt="item.name"
                     class="w-full h-full object-contain"
                     loading="lazy"
