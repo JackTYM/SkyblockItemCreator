@@ -211,6 +211,14 @@ function updateAbilityDescription(index: number, description: string) {
 
 function updateAbilityBonusType(index: number, bonusType: AbilityBonusType) {
   localAbilities.value[index].bonusType = bonusType
+  if (bonusType !== 'tiered') {
+    localAbilities.value[index].tieredGold = undefined
+  }
+  emit('update:abilities', [...localAbilities.value])
+}
+
+function updateAbilityTieredGold(index: number, tieredGold: boolean) {
+  localAbilities.value[index].tieredGold = tieredGold
   emit('update:abilities', [...localAbilities.value])
 }
 
@@ -545,6 +553,17 @@ function updateCustomStat(index: number, field: keyof CustomStat, value: string 
                 >
                   {{ bonusType.label }}
                 </button>
+              </div>
+              <!-- Gold toggle for tiered bonus -->
+              <div v-if="ability.bonusType === 'tiered'" class="flex items-center gap-1.5 ml-2">
+                <input
+                  :id="`tiered-gold-${index}`"
+                  type="checkbox"
+                  :checked="ability.tieredGold"
+                  class="w-3.5 h-3.5 accent-[#FFAA00]"
+                  @change="updateAbilityTieredGold(index, ($event.target as HTMLInputElement).checked)"
+                >
+                <label :for="`tiered-gold-${index}`" class="text-[10px] text-[#FFAA00] cursor-pointer">Gold</label>
               </div>
             </div>
 

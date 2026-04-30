@@ -171,9 +171,10 @@ function getAbilityHeader(ability: ItemAbility): string {
     return `§6${ability.name}`
   }
 
-  // Tiered bonus is dark gray
+  // Tiered bonus is dark gray by default, or gold if toggled
   if (bonusType === 'tiered') {
-    return `§8Tiered Bonus: ${ability.name}`
+    const colorCode = ability.tieredGold ? '6' : '8'
+    return `§${colorCode}Tiered Bonus: ${ability.name}`
   }
 
   // Full Set Bonus and Piece Bonus are gold

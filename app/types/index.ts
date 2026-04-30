@@ -291,6 +291,7 @@ export interface ItemAbility {
   name: string
   description: string // Can contain newlines and formatting codes
   bonusType?: AbilityBonusType // Type of bonus (defaults to 'item' for backwards compatibility)
+  tieredGold?: boolean // For tiered bonus: use gold color instead of gray
 }
 
 // Pet types
