@@ -4,6 +4,7 @@ import MinecraftText from '../item/MinecraftText.vue'
 interface Props {
   tierNumber: number
   requirement: number
+  currentAmount: number
   rewards: string[]
   unlocked: boolean
   collectionName: string
@@ -11,45 +12,78 @@ interface Props {
 
 const props = defineProps<Props>()
 
+function toRoman(num: number): string {
+  const romanNumerals: [number, string][] = [
+    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+    [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+    [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+  ]
+  let result = ''
+  for (const [value, symbol] of romanNumerals) {
+    while (num >= value) {
+      result += symbol
+      num -= value
+    }
+  }
+  return result
+}
+
 function formatNumber(num: number): string {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M'
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+  }
   return num.toLocaleString()
 }
+
+const progressPercent = computed(() => {
+  if (props.unlocked) return 100
+  const percent = Math.min(100, Math.floor((props.currentAmount / props.requirement) * 100))
+  return percent
+})
+
+const progressBarLength = 25
+const filledDashes = computed(() => Math.floor((progressPercent.value / 100) * progressBarLength))
+const emptyDashes = computed(() => progressBarLength - filledDashes.value)
+
+const displayCurrent = computed(() => {
+  return props.currentAmount.toLocaleString()
+})
+
+const displayRequired = computed(() => formatNumber(props.requirement))
 </script>
 
 <template>
-  <div class="mc-tooltip p-3 h-full">
+  <div class="mc-tooltip p-3 h-full w-full">
     <!-- Tier header -->
-    <p class="font-minecraft text-sm mc-text-shadow mb-1">
-      <span class="text-[#FFFF55]">{{ collectionName }}</span>&nbsp;<span class="text-[#AAAAAA]">{{ tierNumber }}</span>
+    <p class="font-minecraft text-sm mc-text-shadow mb-3">
+      <span class="text-[#55FF55]">{{ collectionName }} {{ toRoman(tierNumber) }}</span>
     </p>
 
-    <!-- Requirement -->
-    <p class="font-minecraft text-xs mb-2">
-      <span class="text-[#AAAAAA]">Requires: </span>
-      <span :class="unlocked ? 'text-[#55FF55]' : 'text-[#FFFF55]'">
-        {{ formatNumber(requirement) }}
-      </span>
+    <!-- Progress -->
+    <p class="font-minecraft text-xs mb-1">
+      <span class="text-[#AAAAAA]">Progress: </span>
+      <span class="text-[#55FF55]">{{ progressPercent }}%</span>
+    </p>
+
+    <!-- Progress bar -->
+    <p class="font-minecraft text-xs mb-3">
+      <span class="text-[#00AA00]">{{ '-'.repeat(filledDashes) }}</span><span class="text-[#555555]">{{ '-'.repeat(emptyDashes) }}</span>&nbsp;<span class="text-[#FFFF55]">{{ displayCurrent }}/{{ displayRequired }}</span>
     </p>
 
     <!-- Rewards -->
     <div class="space-y-0.5">
       <p class="font-minecraft text-xs text-[#AAAAAA]">Rewards:</p>
-      <MinecraftText
-        v-for="(reward, idx) in rewards"
-        :key="idx"
-        :text="reward"
-        class="text-xs block"
-      />
-    </div>
-
-    <!-- Status -->
-    <div class="mt-2 pt-2 border-t border-[#28007d]">
-      <p v-if="unlocked" class="font-minecraft text-xs text-[#55FF55]">
-        ✔ UNLOCKED
-      </p>
-      <p v-else class="font-minecraft text-xs text-[#FF5555]">
-        ✖ LOCKED
-      </p>
+      <div class="pl-2">
+        <MinecraftText
+          v-for="(reward, idx) in rewards"
+          :key="idx"
+          :text="reward"
+          class="text-xs block"
+        />
+      </div>
     </div>
   </div>
 </template>

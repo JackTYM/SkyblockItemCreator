@@ -30,15 +30,15 @@ const collection = ref<Collection>({
   texture: '',
   currentAmount: 5000,
   tiers: [
-    { requirement: 50, rewards: ['§aWheat Minion Recipes'], unlocked: true },
-    { requirement: 100, rewards: ['§aFarm Suit Helmet Recipe', '§6+4 SkyBlock XP'], unlocked: true },
-    { requirement: 250, rewards: ['§aFarm Suit Chestplate Recipe', '§6+4 SkyBlock XP'], unlocked: true },
-    { requirement: 500, rewards: ['§aFarm Suit Leggings Recipe', '§6+4 SkyBlock XP'], unlocked: true },
-    { requirement: 1000, rewards: ['§aFarm Suit Boots Recipe', '§6+4 SkyBlock XP'], unlocked: true },
-    { requirement: 2500, rewards: ['§aFarm Crystal Recipe', '§6+4 SkyBlock XP'], unlocked: true },
-    { requirement: 5000, rewards: ['§aHarvesting VI Book', '§6+4 SkyBlock XP'], unlocked: true },
-    { requirement: 10000, rewards: ['§9Farmer Orb Recipe', '§6+4 SkyBlock XP'], unlocked: false },
-    { requirement: 25000, rewards: ['§aHay Bale Minion Skin', '§6+4 SkyBlock XP'], unlocked: false },
+    { requirement: 50, rewards: ['§aWheat Minion §7Recipes'], unlocked: true },
+    { requirement: 100, rewards: ['§aFarm Suit Helmet §7Recipe', '§b+4 SkyBlock XP'], unlocked: true },
+    { requirement: 250, rewards: ['§aFarm Suit Chestplate §7Recipe', '§b+4 SkyBlock XP'], unlocked: true },
+    { requirement: 500, rewards: ['§aFarm Suit Leggings §7Recipe', '§b+4 SkyBlock XP'], unlocked: true },
+    { requirement: 1000, rewards: ['§aFarm Suit Boots §7Recipe', '§b+4 SkyBlock XP'], unlocked: true },
+    { requirement: 2500, rewards: ['§aFarm Crystal §7Recipe', '§b+4 SkyBlock XP'], unlocked: true },
+    { requirement: 5000, rewards: ['§aHarvesting VI Book', '§b+4 SkyBlock XP'], unlocked: true },
+    { requirement: 10000, rewards: ['§9Farmer Orb §7Recipe', '§b+4 SkyBlock XP'], unlocked: false },
+    { requirement: 25000, rewards: ['§aHay Bale Minion Skin', '§b+4 SkyBlock XP'], unlocked: false },
   ],
 })
 
@@ -384,14 +384,15 @@ async function handleCopyJson() {
           >
             <div
               ref="tooltipsContainerRef"
-              class="grid"
-              :style="{ gridTemplateColumns: `repeat(${tooltipsPerRow}, 1fr)` }"
+              class="grid auto-rows-fr"
+              :style="{ gridTemplateColumns: `repeat(${tooltipsPerRow}, minmax(max-content, 1fr))` }"
             >
               <CollectionTooltip
                 v-for="(tier, tIdx) in collection.tiers"
                 :key="tIdx"
                 :tier-number="tIdx + 1"
                 :requirement="tier.requirement"
+                :current-amount="collection.currentAmount"
                 :rewards="tier.rewards"
                 :unlocked="tier.unlocked"
                 :collection-name="collection.name"

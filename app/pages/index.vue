@@ -28,6 +28,13 @@ const features = [
     link: '/milestone',
     color: '#55FFFF',
   },
+  {
+    icon: '📚',
+    title: 'Collection Creator',
+    description: 'Design collection menus with tiers and rewards',
+    link: '/collection',
+    color: '#AA00AA',
+  },
 ]
 </script>
 
