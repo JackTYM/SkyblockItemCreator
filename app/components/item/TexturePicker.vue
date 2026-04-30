@@ -35,6 +35,53 @@ const leatherColor = ref('#A06540') // Default leather brown color
 const leatherPreviewTexture = ref<string | null>(null) // Rendered preview texture
 const leatherGridTextures = ref<Map<string, string>>(new Map()) // Pre-rendered leather textures for grid display
 
+// Recent custom heads storage
+const RECENT_HEADS_KEY = 'skyblock-creator-recent-heads'
+const MAX_RECENT_HEADS = 12
+
+interface RecentHead {
+  id: string
+  name: string
+  texture: string
+  source: 'heads'
+}
+
+const recentHeads = ref<RecentHead[]>([])
+
+function loadRecentHeads() {
+  if (typeof window === 'undefined') return
+  try {
+    const stored = localStorage.getItem(RECENT_HEADS_KEY)
+    if (stored) {
+      recentHeads.value = JSON.parse(stored)
+    }
+  } catch {
+    recentHeads.value = []
+  }
+}
+
+function saveRecentHead(head: RecentHead) {
+  // Remove duplicate if exists
+  recentHeads.value = recentHeads.value.filter(h => h.id !== head.id)
+  // Add to front
+  recentHeads.value.unshift(head)
+  // Limit size
+  if (recentHeads.value.length > MAX_RECENT_HEADS) {
+    recentHeads.value = recentHeads.value.slice(0, MAX_RECENT_HEADS)
+  }
+  // Save to localStorage
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(RECENT_HEADS_KEY, JSON.stringify(recentHeads.value))
+  }
+}
+
+function clearRecentHeads() {
+  recentHeads.value = []
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(RECENT_HEADS_KEY)
+  }
+}
+
 // Proxy external URLs through images.weserv.nl to add CORS headers for PNG export
 function getProxiedUrl(url: string): string {
   try {
@@ -84,6 +131,8 @@ watch(() => props.show, async (isShown) => {
   if (isShown) {
     // Pre-render leather armor textures when modal opens
     await preRenderLeatherArmor()
+    // Load recent heads
+    loadRecentHeads()
   }
   if (!isShown) {
     // Reset all input state when modal closes
@@ -173,13 +222,15 @@ async function searchHead() {
 function selectHead() {
   if (!headPreview.value) return
 
-  pendingItem.value = {
+  const head: RecentHead = {
     id: headUsername.value,
     name: `${headUsername.value}'s Head`,
     texture: headPreview.value,
     source: 'heads',
   }
+  pendingItem.value = head
   itemCount.value = 1
+  saveRecentHead(head)
 }
 
 // Search for skull texture by hash or base64 value
@@ -208,12 +259,19 @@ function selectTexture() {
   if (!texturePreview.value) return
 
   const shortId = textureValue.value.slice(0, 8)
-  pendingItem.value = {
+  const head: RecentHead = {
     id: textureValue.value,
     name: `Custom Head (${shortId}...)`,
     texture: texturePreview.value,
     source: 'heads',
   }
+  pendingItem.value = head
+  itemCount.value = 1
+  saveRecentHead(head)
+}
+
+function selectRecentHead(head: RecentHead) {
+  pendingItem.value = { ...head }
   itemCount.value = 1
 }
 
@@ -227,13 +285,15 @@ async function validateCustomUrl() {
   const isValid = await validateImageUrl(customUrl.value)
 
   if (isValid) {
-    pendingItem.value = {
-      id: 'custom',
+    const customTexture: RecentHead = {
+      id: customUrl.value,
       name: 'Custom Texture',
       texture: getProxiedUrl(customUrl.value),
-      source: 'custom',
+      source: 'heads',
     }
+    pendingItem.value = customTexture
     itemCount.value = 1
+    saveRecentHead(customTexture)
   } else {
     urlError.value = 'Invalid image URL'
   }
@@ -481,6 +541,39 @@ const tabs = [
                     For Skyblock items, find the texture value in the item's NBT data or from sites like minecraft-heads.com
                   </template>
                 </p>
+
+                <!-- Recent heads -->
+                <div v-if="recentHeads.length > 0" class="mt-4 pt-4 border-t border-[#373737]">
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs text-[#AAAAAA]">Recent Heads</p>
+                    <button
+                      class="text-[10px] text-[#555555] hover:text-[#FF5555]"
+                      @click="clearRecentHeads"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-6 gap-1">
+                    <button
+                      v-for="head in recentHeads"
+                      :key="head.id"
+                      class="mc-slot mc-slot-hover aspect-square flex items-center justify-center p-1 group relative"
+                      :title="head.name"
+                      @click="selectRecentHead(head)"
+                    >
+                      <img
+                        :src="head.texture"
+                        :alt="head.name"
+                        class="w-full h-full object-contain"
+                        loading="lazy"
+                      >
+                      <!-- Tooltip -->
+                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-[#100010] border border-[#28007d] text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                        {{ head.name }}
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
             </template>
 
@@ -517,6 +610,39 @@ const tabs = [
                 <p class="font-minecraft text-xs text-[#555555]">
                   Paste a direct link to any image. The image must be CORS-enabled.
                 </p>
+
+                <!-- Recent heads -->
+                <div v-if="recentHeads.length > 0" class="mt-4 pt-4 border-t border-[#373737]">
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs text-[#AAAAAA]">Recent Textures</p>
+                    <button
+                      class="text-[10px] text-[#555555] hover:text-[#FF5555]"
+                      @click="clearRecentHeads"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-6 gap-1">
+                    <button
+                      v-for="head in recentHeads"
+                      :key="head.id"
+                      class="mc-slot mc-slot-hover aspect-square flex items-center justify-center p-1 group relative"
+                      :title="head.name"
+                      @click="selectRecentHead(head)"
+                    >
+                      <img
+                        :src="head.texture"
+                        :alt="head.name"
+                        class="w-full h-full object-contain"
+                        loading="lazy"
+                      >
+                      <!-- Tooltip -->
+                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-[#100010] border border-[#28007d] text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                        {{ head.name }}
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
             </template>
           </div>

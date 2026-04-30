@@ -116,6 +116,7 @@ function getColorCode(hexColor: string): string {
     '#FFAA00': '6', // Gold
     '#FFFFFF': 'f', // White
     '#AA00AA': '5', // Purple
+    '#FF55FF': 'd', // Pink/Light Purple
     '#AAAAAA': '7', // Gray
     '#00AA00': '2', // Dark Green
   }

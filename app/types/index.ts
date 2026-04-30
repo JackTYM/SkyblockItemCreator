@@ -116,7 +116,7 @@ export const SKYBLOCK_STATS: SkyblockStat[] = [
   { symbol: '☘', name: 'Mining Fortune', stat: 'mining_fortune', color: '#FFAA00' },
   { symbol: '☘', name: 'Farming Fortune', stat: 'farming_fortune', color: '#FFAA00' },
   { symbol: '☘', name: 'Foraging Fortune', stat: 'foraging_fortune', color: '#FFAA00' },
-  { symbol: '☘', name: 'Hunting Fortune', stat: 'hunting_fortune', color: '#FFAA00' },
+  { symbol: '☘', name: 'Hunting Fortune', stat: 'hunting_fortune', color: '#FF55FF' },
   { symbol: '☘', name: 'Fishing Fortune', stat: 'fishing_fortune', color: '#FFAA00' },
 
   // Mining Stats - Gold
@@ -128,10 +128,13 @@ export const SKYBLOCK_STATS: SkyblockStat[] = [
   { symbol: 'Ⓟ', name: 'Bonus Pest Chance', stat: 'bonus_pest_chance', color: '#00AA00' },
   { symbol: '❀', name: 'Overbloom', stat: 'overbloom', color: '#FFAA00' },
 
+  // Foraging Stats
+  { symbol: '∮', name: 'Sweep', stat: 'sweep', color: '#00AA00' },
+
   // Fishing Stats
   { symbol: '☂', name: 'Fishing Speed', stat: 'fishing_speed', color: '#55FFFF' },
   { symbol: 'α', name: 'Sea Creature Chance', stat: 'sea_creature_chance', color: '#00CED1' },
-  { symbol: '⚓', name: 'Double Hook', stat: 'double_hook', color: '#0000AA' },
+  { symbol: '⚓', name: 'Double Hook', stat: 'double_hook', color: '#5555FF' },
   { symbol: '✧', name: 'Trophy Fish Chance', stat: 'trophy_fish_chance', color: '#FFAA00' },
 
   // Wisdom Stats - Aqua
@@ -153,7 +156,7 @@ export const SKYBLOCK_STATS: SkyblockStat[] = [
   { symbol: '☠', name: 'Rift Damage', stat: 'rift_damage', color: '#AA00AA' },
 
   // Other
-  { symbol: '⚔', name: 'Bonus Attack Speed', stat: 'bonus_attack_speed', color: '#FFFF55' },
+  { symbol: '⚔', name: 'Attack Speed', stat: 'bonus_attack_speed', color: '#FFFF55' },
   { symbol: '❈', name: 'Bonus Defense', stat: 'bonus_defense', color: '#55FF55' },
 ]
 
@@ -163,8 +166,10 @@ export const SKYBLOCK_SYMBOLS: string[] = [
   '♥', '❁', '☣', '☠', '❈', '❂', '✎', '✦', '⚔', '⫽', '๑', '♨', '☄', 'Ⓢ',
   // Luck & Fortune
   '☘', '✯', '⸕', '✧', 'Ⓟ', 'ℰ',
-  // Fishing
-  '☂', 'α', '⚓', '❣', '⚗',
+  // Fishing & Foraging
+  '☂', 'α', '⚓', '❣', '⚗', '∮',
+  // Slot symbols
+  '☤', '⏣',
   // Decorative
   '✿', '❃', '❆', '❉', '✵', '✶', '✸', '❋', '✾', '❀', '❇', '❊', '※',
   '⚡', '☀', '☁', '☾', '★', '☆', '⬟', '⬢', '◆', '◇', '○', '●', '□', '■',

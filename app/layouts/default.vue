@@ -7,6 +7,7 @@ const navItems = [
   { path: '/recipe', label: 'Recipe Designer', icon: '⚒' },
   { path: '/mayor', label: 'Mayor Creator', icon: '👑' },
   { path: '/milestone', label: 'Milestone Creator', icon: '🏆' },
+  { path: '/collection', label: 'Collection Creator', icon: '📚' },
 ]
 </script>
 

@@ -94,6 +94,12 @@ const statCategories = {
     color: '#00AA00',
     stats: ['bonus_pest_chance', 'overbloom'],
   },
+  foraging: {
+    name: 'Foraging',
+    icon: '∮',
+    color: '#00AA00',
+    stats: ['sweep'],
+  },
   fishing: {
     name: 'Fishing',
     icon: '☂',

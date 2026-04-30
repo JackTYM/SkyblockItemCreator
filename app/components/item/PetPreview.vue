@@ -116,6 +116,7 @@ function getColorCode(hexColor: string): string {
     '#FFAA00': '6',
     '#FFFFFF': 'f',
     '#AA00AA': '5',
+    '#FF55FF': 'd', // Pink/Light Purple
     '#AAAAAA': '7',
     '#00AA00': '2',
   }
@@ -144,7 +145,7 @@ const formattedStats = computed(() => {
       if (customStat.value === 0) continue
       const prefix = customStat.value > 0 ? '+' : ''
       const colorCode = findClosestColorCode(customStat.color)
-      lines.push(`§7${customStat.symbol} ${customStat.name}: §${colorCode}${prefix}${customStat.value}`)
+      lines.push(`§7${customStat.name}: §${colorCode}${prefix}${customStat.value}`)
     }
   }
 
